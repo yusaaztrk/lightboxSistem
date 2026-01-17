@@ -7,33 +7,39 @@ public class SystemSettings
     [Key]
     public int Id { get; set; }
 
-    // Kasa (Mt Tül) Costs
-    public decimal Kasa4Single { get; set; } = 150;
-    public decimal Kasa5Single { get; set; } = 250;
-    public decimal Kasa8Single { get; set; } = 400;
-    public decimal Kasa10Single { get; set; } = 500;
-    public decimal Kasa12Single { get; set; } = 750;
+    // --- GENEL MALİYETLER (Sabit Giderler) ---
+    // Ekran görüntüsü: "KABLO MALİYETİ: HER BİR ADET İÇİN 6,00$"
+    public decimal CableFixedCost { get; set; } = 6.00m;
+
+    // Ekran görüntüsü: "KÖŞEBENT MALİYETİ: ADET 0,70$"
+    public decimal CornerPiecePrice { get; set; } = 0.70m;
+
+    // Ekran görüntüsü: "LEDBOX BASKI MALİYETİ M² 10,00$"
+    public decimal PrintCostPerM2 { get; set; } = 10.00m;
+
+    // --- ORANLAR (Parametrik) ---
+    // Ses kaydı: "%30 İşçilik... %30 Kar"
+    public decimal LaborRatePercentage { get; set; } = 30.0m;
+    public decimal ProfitMarginPercentage { get; set; } = 30.0m;
+
+    // --- LED ve ELEKTRİK PARAMETRELERİ ---
+    // Ekran görüntüsü: 50cm çubuk 0.5 Amper → 1 Metre = 1.0 Amper
+    public decimal AmperesPerMeter { get; set; } = 1.0m;
+
+    // Ekran görüntüsü: İç mekan adet (50cm) 1$ → Metresi 2$
+    public decimal LedIndoorPricePerMeter { get; set; } = 2.00m;
+
+    // Ekran görüntüsü: Dış mekan adet (50cm) 1.5$ → Metresi 3$
+    public decimal LedOutdoorPricePerMeter { get; set; } = 3.00m;
+
+    // --- DEPRECATED FIELDS (Geriye Dönük Uyumluluk İçin) ---
+    // Not: Profil, Zemin ve Adaptör fiyatları artık ayrı tablolarda tutulacak
+    [Obsolete("Use ProfileCost table instead")]
+    public string ProfileCostsJson { get; set; } = "[]";
     
-    public decimal Kasa8Double { get; set; } = 600;
-    public decimal Kasa10Double { get; set; } = 1000;
-    public decimal Kasa12Double { get; set; } = 1500;
-
-    // Zemin (M2) Costs
-    public decimal ZeminMdf4mm { get; set; } = 200;
-    public decimal ZeminDekota4mm { get; set; } = 500;
-    public decimal ZeminKompozit4mm { get; set; } = 600;
-
-    // Led (Mt Tül) Costs
-    public decimal LedIcMekan { get; set; } = 2;
-    public decimal LedDisMekan { get; set; } = 4;
-
-    // Diğer Giderler
-    public decimal DigerBaskiM2 { get; set; } = 300;
-    public decimal DigerKoseAparatiAdet { get; set; } = 50;
-    public decimal DigerSabitEkstraGider { get; set; } = 40;
-
-    // JSON Fields
-    public string AdapterPricesJson { get; set; } = "[{\"amps\":3,\"price\":50,\"watt\":36},{\"amps\":5,\"price\":80,\"watt\":60},{\"amps\":10,\"price\":150,\"watt\":120},{\"amps\":12.5,\"price\":180,\"watt\":150},{\"amps\":20,\"price\":250,\"watt\":240},{\"amps\":30,\"price\":350,\"watt\":360}]";
+    [Obsolete("Use AdapterPrice table instead")]
+    public string AdapterPricesJson { get; set; } = "[]";
     
-    public string LedSpacingOptionsJson { get; set; } = "[10,15]";
+    [Obsolete("LED spacing is now calculated automatically")]
+    public string LedSpacingOptionsJson { get; set; } = "[15]";
 }
