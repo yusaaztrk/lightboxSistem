@@ -1,0 +1,6 @@
+@LightboxBackend_HostAddress = http://localhost:5247
+
+GET {{LightboxBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
