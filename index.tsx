@@ -5,7 +5,7 @@ import App from './App';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/DashboardLayout';
 import OrdersPage from './pages/OrdersPage';
-import SettingsPage from './pages/SettingsPage';
+import AdminSettings from './pages/AdminSettings';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -25,7 +25,7 @@ root.render(
         <Route path="/admin" element={<DashboardLayout />}>
           <Route index element={<OrdersPage />} /> {/* Default to orders */}
           <Route path="orders" element={<OrdersPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </BrowserRouter>

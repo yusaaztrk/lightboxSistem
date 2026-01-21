@@ -1,33 +1,52 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  Settings, Box, ShoppingBag, X, Upload, Eye, EyeOff,
-  Image as ImageIcon, CheckCircle2, LayoutGrid, Maximize2,
-  LucideImage, Calculator, Layers, Sparkles
+  Settings, Box, ShoppingBag, Upload, Eye, EyeOff,
+  Image as ImageIcon, CheckCircle2, LayoutGrid, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ConfigOptions, ShapeType, ProfileType, PricingFactors, MockupScene } from './types';
+import { ConfigOptions, ShapeType, ProfileType, PricingFactors, MockupScene, CalculationBreakdown } from './types';
 import { DEFAULT_CONFIG, INITIAL_PRICING, DEPTH_OPTIONS, MOCKUP_SCENES } from './constants';
-import { calculatePrice } from './services/priceCalculator';
 import Lightbox3D from './components/Lightbox3D';
 import MockupViewer from './components/MockupViewer';
+import CostBreakdownAccordion from './components/CostBreakdownAccordion';
+import LedVisualization from './components/LedVisualization';
 import { api } from './services/api';
 
 const App: React.FC = () => {
   const [config, setConfig] = useState<ConfigOptions>(DEFAULT_CONFIG);
   const [factors, setFactors] = useState<PricingFactors>(INITIAL_PRICING);
+  const [breakdown, setBreakdown] = useState<CalculationBreakdown | null>(null);
   const [selectedScene, setSelectedScene] = useState<MockupScene | null>(null);
 
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const result = useMemo(() => calculatePrice(config, factors), [config, factors]);
 
   useEffect(() => {
-    api.getSettings().then(data => {
-      setFactors(data);
-    }).catch(err => {
-      console.warn("Using default pricing (API offline?)", err);
-    });
+    const fetchSettings = async () => {
+      try {
+        const data = await api.getSettings();
+        setFactors(data);
+      } catch (err) {
+        console.warn("Using default pricing (API offline?)", err);
+      }
+    };
+    fetchSettings();
   }, []);
+
+  // Debounced calculation
+  useEffect(() => {
+    const calculate = async () => {
+      try {
+        const data = await api.calculateDetails(config);
+        setBreakdown(data);
+      } catch (error) {
+        console.error("Calculation failed", error);
+      }
+    };
+
+    const timeoutId = setTimeout(calculate, 500);
+    return () => clearTimeout(timeoutId);
+  }, [config]);
 
   const updateConfig = (key: keyof ConfigOptions, value: any) => {
     setConfig(prev => ({ ...prev, [key]: value }));
@@ -47,7 +66,7 @@ const App: React.FC = () => {
 
   // --- Settings Panel Content (shared between desktop sidebar and mobile inline) ---
   const SettingsPanelContent = () => (
-    <div className="p-6 md:p-10 space-y-10 md:space-y-12 pb-32">
+    <div className="p-6 md:p-10 space-y-10 md:space-y-12 pb-8 md:pb-32">
       {/* Tasarım Yükleme Alanı */}
       <section className="bg-indigo-600/5 p-4 md:p-10 rounded-2xl md:rounded-[3.5rem] border border-indigo-500/10 relative overflow-hidden group">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.1),transparent)] pointer-events-none" />
@@ -114,8 +133,6 @@ const App: React.FC = () => {
           </div>
         </section>
 
-
-
         <section className="space-y-4 md:space-y-6">
           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block ml-1">KASA DERİNLİĞİ (CM)</label>
           <div className="grid grid-cols-5 gap-2 md:gap-3">
@@ -149,37 +166,38 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Fiyat ve Sipariş Onay */}
-        <div className="mt-10 md:mt-16 p-8 md:p-10 bg-indigo-600/5 border border-indigo-500/10 rounded-[2rem] md:rounded-[3rem] shadow-inner">
-          <div className="flex items-center justify-between mb-6 md:mb-8">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] md:tracking-[0.4em] mb-1 leading-none">ÖDEME TUTARI</span>
-              <span className="text-3xl md:text-4xl font-black text-white tracking-tighter italic leading-none">${result.totalPrice.toLocaleString()}</span>
-            </div>
-            <div className="flex flex-col items-end opacity-40">
-              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 leading-none">TESLİMAT</span>
-              <span className="text-xs font-black text-white leading-none italic uppercase">3-5 GÜN</span>
-            </div>
-          </div>
-          <button onClick={async () => {
-            const order = {
-              customerName: "Misafir Kullanıcı", // In a real app, you'd ask for this
-              dimensions: `${config.width}x${config.height}`,
-              price: result.totalPrice,
-              configurationDetails: JSON.stringify(config),
-              status: 'Pending'
-            };
+        {/* LED Visualization */}
+        {breakdown && breakdown.selectedLayout && (
+          <LedVisualization config={config} layout={breakdown.selectedLayout} />
+        )}
 
-            try {
-              await api.createOrder(order);
-              alert("Siparişiniz başarıyla alındı!");
-            } catch (error) {
-              console.error(error);
-              alert("Sipariş oluşturulurken bir hata oluştu.");
-            }
-          }} className="w-full bg-white text-black font-black py-5 md:py-6 rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-3 md:gap-4 shadow-2xl uppercase tracking-tighter text-base md:text-lg group active:scale-[0.98]">
-            SİPARİŞİ TAMAMLA <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
-          </button>
+        {/* Fiyat ve Sipariş Onay */}
+        {breakdown && <CostBreakdownAccordion breakdown={breakdown} />}
+
+        <div className="p-4 md:p-6 bg-indigo-600/5 border border-indigo-500/10 rounded-[2rem] shadow-inner mt-4">
+          {breakdown ? (
+            <button onClick={async () => {
+              const order = {
+                customerName: "Misafir Kullanıcı",
+                dimensions: `${config.width}x${config.height}`,
+                price: breakdown.finalPrice,
+                configurationDetails: JSON.stringify(config),
+                status: 'Pending'
+              };
+
+              try {
+                await api.createOrder(order);
+                alert("Siparişiniz başarıyla alındı!");
+              } catch (error) {
+                console.error(error);
+                alert("Sipariş oluşturulurken bir hata oluştu.");
+              }
+            }} className="w-full bg-white text-black font-black py-5 md:py-6 rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-3 md:gap-4 shadow-2xl uppercase tracking-tighter text-base md:text-lg group active:scale-[0.98]">
+              SİPARİŞİ TAMAMLA <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+          ) : (
+            <div className="text-center text-gray-500 font-bold p-4">Hesaplanıyor...</div>
+          )}
         </div>
       </div>
     </div>
@@ -188,7 +206,7 @@ const App: React.FC = () => {
   return (
     <>
       {/* MOBILE LAYOUT: Single scrollable page */}
-      <div className="md:hidden min-h-screen w-full bg-[#050507] text-gray-200 font-sans overflow-x-hidden">
+      <div className="md:hidden min-h-screen w-full bg-[#050507] text-gray-200 font-sans overflow-y-auto overflow-x-hidden">
         {/* Header */}
         <div className="p-4">
           <div className="flex justify-between items-center z-10 bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-3xl shadow-2xl">
@@ -284,7 +302,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-end pr-6 border-r border-white/10">
                 <span className="text-[9px] text-gray-500 font-black uppercase mb-1 tracking-widest">GÜNCEL FİYAT</span>
-                <span className="text-xl font-black text-indigo-400 tracking-tighter">${result.totalPrice.toLocaleString()}</span>
+                <span className="text-xl font-black text-indigo-400 tracking-tighter">{breakdown ? `$${breakdown.finalPrice.toLocaleString()}` : '...'}</span>
               </div>
               <button onClick={() => navigate('/admin')} className="p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition group shadow-lg">
                 <Settings className="w-5 h-5 text-gray-400 group-hover:rotate-90 transition-transform duration-500" />

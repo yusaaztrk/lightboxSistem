@@ -34,7 +34,7 @@ public class LedOptimizationService
         var usableWidth = widthCm - (2 * EDGE_MARGIN_CM);
         
         // Calculate number of strips (15cm spacing)
-        var stripCount = (int)Math.Floor(usableWidth / LED_SPACING_CM);
+        var stripCount = (int)Math.Ceiling(usableWidth / LED_SPACING_CM);
         stripCount = Math.Max(1, stripCount); // At least 1 strip
         
         // Each strip runs the full height MINUS mounting margin
@@ -60,7 +60,7 @@ public class LedOptimizationService
         var usableHeight = heightCm - (2 * EDGE_MARGIN_CM);
         
         // Calculate number of strips (15cm spacing)
-        var stripCount = (int)Math.Floor(usableHeight / LED_SPACING_CM);
+        var stripCount = (int)Math.Ceiling(usableHeight / LED_SPACING_CM);
         stripCount = Math.Max(1, stripCount);
         
         // Each strip runs the full width MINUS mounting margin

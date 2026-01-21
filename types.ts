@@ -40,6 +40,34 @@ export interface PricingFactors {
   ledSpacingOptions: number[]; // Adminin belirlediği seçenekler (örn: [10, 15, 20])
 }
 
+export interface LedLayoutResult {
+  direction: 'Horizontal' | 'Vertical';
+  stripCount: number;
+  stripLength: number;
+  totalLedMeters: number;
+  totalCost: number;
+}
+
+export interface CalculationBreakdown {
+  profileCost: number;
+  backingCost: number;
+  printCost: number;
+  ledCost: number;
+  adapterCost: number;
+  cableCost: number;
+  cornerPieceCost: number;
+  rawMaterialTotal: number;
+  laborCost: number;
+  laboredTotal: number;
+  profitMargin: number;
+  finalPrice: number;
+  selectedLayout: LedLayoutResult;
+  alternativeLayout: LedLayoutResult;
+  adapterName: string;
+  requiredAmperes: number;
+  selectedAmperes: number;
+}
+
 export interface CalculationResult {
   totalPrice: number;
   ledMetres: number;
@@ -47,6 +75,7 @@ export interface CalculationResult {
   surfaceArea: number;
   adapterNeeded: string;
   totalWattage: number;
+  breakdown?: CalculationBreakdown; // Optional for now
 }
 
 export interface MockupScene {
@@ -65,5 +94,29 @@ export interface Order {
   configurationDetails: string;
   status: string;
   createdAt: string;
+}
+
+export interface ProfileCost {
+  id: number;
+  name: string;
+  depthCm: number;
+  isDoubleSided: boolean;
+  pricePerMeter: number;
+  displayName?: string;
+}
+
+export interface BackingCost {
+  id: number;
+  materialType: string;
+  displayName: string;
+  pricePerM2: number;
+}
+// Renaming existing adapterPrices in PricingFactors might be confusing, but here we define the model
+export interface AdapterPrice {
+  id: number;
+  name: string;
+  amperage: number;
+  wattage: number;
+  price: number;
 }
 

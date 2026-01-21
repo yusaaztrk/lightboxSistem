@@ -19,9 +19,9 @@ public class AdapterPricesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<AdapterPrice>>> GetAll()
     {
-        return await _context.AdapterPrices
-            .OrderBy(a => a.Amperage)
-            .ToListAsync();
+        // Fix: SQLite cannot order by decimal, so we order in memory
+        var list = await _context.AdapterPrices.ToListAsync();
+        return list.OrderBy(a => a.Amperage).ToList();
     }
     
     [HttpPost]
