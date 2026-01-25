@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LightboxBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260117220005_AddDynamicPricingTables")]
-    partial class AddDynamicPricingTables
+    [Migration("20260124163444_AddFabricProfitMargin")]
+    partial class AddFabricProfitMargin
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,20 +154,6 @@ namespace LightboxBackend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LightboxBackend.Models.LedSpacingOption", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Cm")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("LedSpacingOptions");
-                });
-
             modelBuilder.Entity("LightboxBackend.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -252,7 +238,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 10m,
                             IsDoubleSided = false,
                             Name = "10cm Tek Taraf",
-                            PricePerMeter = 6.00m
+                            PricePerMeter = 7.00m
                         },
                         new
                         {
@@ -260,7 +246,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 12m,
                             IsDoubleSided = false,
                             Name = "12cm Tek Taraf",
-                            PricePerMeter = 7.50m
+                            PricePerMeter = 11.00m
                         },
                         new
                         {
@@ -284,7 +270,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 12m,
                             IsDoubleSided = true,
                             Name = "12cm Çift Taraf",
-                            PricePerMeter = 15.00m
+                            PricePerMeter = 12.00m
                         });
                 });
 
@@ -305,6 +291,9 @@ namespace LightboxBackend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("CornerPiecePrice")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("FabricProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("LaborRatePercentage")
@@ -342,6 +331,7 @@ namespace LightboxBackend.Migrations
                             AmperesPerMeter = 1.0m,
                             CableFixedCost = 6.00m,
                             CornerPiecePrice = 0.70m,
+                            FabricProfitMarginPercentage = 30.0m,
                             LaborRatePercentage = 30.0m,
                             LedIndoorPricePerMeter = 2.00m,
                             LedOutdoorPricePerMeter = 3.00m,

@@ -9,6 +9,7 @@ public class CalculationBreakdown
     public decimal AdapterCost { get; set; }
     public decimal CableCost { get; set; }
     public decimal CornerPieceCost { get; set; }
+    public decimal StandCost { get; set; }
     
     public decimal RawMaterialTotal { get; set; }
     public decimal LaborCost { get; set; }
@@ -23,4 +24,8 @@ public class CalculationBreakdown
     public string AdapterName { get; set; } = string.Empty;
     public decimal RequiredAmperes { get; set; }
     public decimal SelectedAmperes { get; set; }
+
+    // Dimensions
+    public decimal Perimeter { get; set; }
+    public decimal AreaM2 { get; set; }
 }

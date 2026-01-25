@@ -11,7 +11,7 @@ export const DEFAULT_CONFIG: any = {
   depth: 8,
   profile: ProfileType.SINGLE,
   ledType: 'INNER' as LedType,
-  backplate: 'MDF_4MM' as BackplateType,
+  backplate: 'MDF_3MM' as BackplateType,
   title: "Yeni Proje",
   userImageUrl: null,
   viewMode: 'finish',
@@ -30,7 +30,8 @@ export const INITIAL_PRICING: PricingFactors = {
     '12_DOUBLE': 1500
   },
   backplatePrices: {
-    'MDF_4MM': 200,
+    'MDF_3MM': 200,
+    'MDF_5MM': 250,
     'DEKOTA_4_5MM': 500,
     'KOMPOZIT_4MM': 600
   },
@@ -52,7 +53,7 @@ export const INITIAL_PRICING: PricingFactors = {
   ledSpacingOptions: [10, 15] // Varsayılan seçenekler
 };
 
-export const DEPTH_OPTIONS = [4, 5, 8, 10, 12];
+export const DEPTH_OPTIONS = [4.5, 8, 10, 12];
 
 export const MOCKUP_SCENES: MockupScene[] = [
   { id: 'ms1', title: 'Mermer Salon', url: '/mockups/mockup1.jpg' },

@@ -19,7 +19,7 @@ public class PricingCalculationService
     
     public async Task<CalculationBreakdown> CalculateDetailedPrice(
         decimal width, decimal height, decimal depth, bool isDoubleSided, 
-        string ledType, string backplateType, SystemSettings settings)
+        string ledType, string backplateType, SystemSettings settings, int? profileId = null, bool hasFeet = false)
     {
         var breakdown = new CalculationBreakdown();
         
@@ -29,11 +29,25 @@ public class PricingCalculationService
         var perimeterM = (widthM + heightM) * 2;
         var areaM2 = widthM * heightM;
         
-        // 2. Profile cost (from ProfileCost table)
-        var profileCost = await _context.ProfileCosts
-            .FirstOrDefaultAsync(p => 
-                p.DepthCm == depth && 
-                p.IsDoubleSided == isDoubleSided);
+        breakdown.Perimeter = perimeterM;
+        breakdown.AreaM2 = areaM2;
+        
+        // 2. Profile cost (Prioritize ProfileID for specific selection)
+        ProfileCost? profileCost = null;
+
+        if (profileId.HasValue && profileId.Value > 0)
+        {
+            profileCost = await _context.ProfileCosts.FindAsync(profileId.Value);
+        }
+
+        // Fallback or validation: if ID not found or not provided, match by depth/type
+        if (profileCost == null)
+        {
+            profileCost = await _context.ProfileCosts
+                .FirstOrDefaultAsync(p => 
+                    p.DepthCm == depth && 
+                    p.IsDoubleSided == isDoubleSided);
+        }
         
         if (profileCost == null)
             throw new Exception($"Profil bulunamadı: {depth}cm {(isDoubleSided ? "Çift" : "Tek")} Taraf");
@@ -74,17 +88,21 @@ public class PricingCalculationService
         var safetyAmperes = totalAmperes * 1.2m;
         
         // Select adapter from database that can handle the ampere load
-        var adapter = await _context.AdapterPrices
+        // Fetch ALL adapters first to sort in memory (Client-side evaluation)
+        // because SQLite doesn't support decimal OrderBy in this version
+        var allAdapters = await _context.AdapterPrices.ToListAsync();
+
+        var adapter = allAdapters
             .Where(a => a.Amperage >= safetyAmperes)
-            .OrderBy(a => a.Amperage) // En küçük uygun adaptörü seç
-            .FirstOrDefaultAsync();
+            .OrderBy(a => a.Amperage)
+            .FirstOrDefault();
         
         if (adapter == null)
         {
-            // Eğer hiçbir adaptör yetmiyorsa, en büyüğünü al
-            adapter = await _context.AdapterPrices
+            // If none sufficient, pick the largest one
+            adapter = allAdapters
                 .OrderByDescending(a => a.Amperage)
-                .FirstAsync();
+                .FirstOrDefault();
         }
         
         breakdown.AdapterCost = adapter.Price;
@@ -100,6 +118,16 @@ public class PricingCalculationService
         var cornerCount = isDoubleSided ? 8 : 4;
         breakdown.CornerPieceCost = cornerCount * settings.CornerPiecePrice;
         
+        // Stand Cost Logic
+        if (hasFeet) 
+        {
+            breakdown.StandCost = settings.StandPrice;
+        }
+        else 
+        {
+            breakdown.StandCost = 0;
+        }
+
         // 8. Calculate totals
         breakdown.RawMaterialTotal = 
             breakdown.ProfileCost + 
@@ -108,7 +136,8 @@ public class PricingCalculationService
             breakdown.LedCost + 
             breakdown.AdapterCost + 
             breakdown.CableCost + 
-            breakdown.CornerPieceCost;
+            breakdown.CornerPieceCost +
+            breakdown.StandCost;
         
         // 9. Add labor (Ses kaydı: %30 İşçilik)
         breakdown.LaborCost = breakdown.RawMaterialTotal * 

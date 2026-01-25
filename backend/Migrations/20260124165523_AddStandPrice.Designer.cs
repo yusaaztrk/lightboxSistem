@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LightboxBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260121230143_FinalizeSchemaAndSeeds")]
-    partial class FinalizeSchemaAndSeeds
+    [Migration("20260124165523_AddStandPrice")]
+    partial class AddStandPrice
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,20 +154,6 @@ namespace LightboxBackend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LightboxBackend.Models.LedSpacingOption", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Cm")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("LedSpacingOptions");
-                });
-
             modelBuilder.Entity("LightboxBackend.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -260,7 +246,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 12m,
                             IsDoubleSided = false,
                             Name = "12cm Tek Taraf",
-                            PricePerMeter = 7.50m
+                            PricePerMeter = 11.00m
                         },
                         new
                         {
@@ -284,7 +270,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 12m,
                             IsDoubleSided = true,
                             Name = "12cm Çift Taraf",
-                            PricePerMeter = 15.00m
+                            PricePerMeter = 12.00m
                         });
                 });
 
@@ -305,6 +291,9 @@ namespace LightboxBackend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("CornerPiecePrice")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("FabricProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("LaborRatePercentage")
@@ -330,6 +319,9 @@ namespace LightboxBackend.Migrations
                     b.Property<decimal>("ProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("StandPrice")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("Settings");
@@ -342,13 +334,15 @@ namespace LightboxBackend.Migrations
                             AmperesPerMeter = 1.0m,
                             CableFixedCost = 6.00m,
                             CornerPiecePrice = 0.70m,
+                            FabricProfitMarginPercentage = 30.0m,
                             LaborRatePercentage = 30.0m,
                             LedIndoorPricePerMeter = 2.00m,
                             LedOutdoorPricePerMeter = 3.00m,
                             LedSpacingOptionsJson = "[15]",
                             PrintCostPerM2 = 10.00m,
                             ProfileCostsJson = "[]",
-                            ProfitMarginPercentage = 30.0m
+                            ProfitMarginPercentage = 30.0m,
+                            StandPrice = 50.0m
                         });
                 });
 #pragma warning restore 612, 618

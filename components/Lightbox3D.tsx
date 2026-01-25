@@ -12,7 +12,7 @@ import {
   SpotLight as DreiSpotLight
 } from '@react-three/drei';
 import * as THREE from 'three';
-import { ConfigOptions, ShapeType } from '../types';
+import { ConfigOptions, ShapeType, ProfileType } from '../types';
 
 const Mesh = 'mesh' as any;
 const Group = 'group' as any;
@@ -39,11 +39,14 @@ const TexturedMaterial: React.FC<{ url: string; isTechnical: boolean; isLightOn:
     <MeshStandardMaterial
       map={texture}
       emissiveMap={texture}
-      color="#ffffff"
+      // Light OFF -> Darker base color + No Emissive
+      // Light ON -> White base color + High Emissive
+      color={isLightOn ? "#ffffff" : "#666666"}
       transparent={isTechnical}
       opacity={isTechnical ? 0.0 : 1.0}
       emissive="#ffffff"
-      emissiveIntensity={isTechnical ? 0.0 : (isLightOn ? 1.0 : 0.0)} // 1.0 for bright, 0.0 for off
+      emissiveIntensity={isTechnical ? 0.0 : (isLightOn ? 1.5 : 0.0)}
+      toneMapped={false} // Allows colors to exceed 1.0 for bloom effect
       visible={!isTechnical}
     />
   );
@@ -79,8 +82,62 @@ const LedStrips: React.FC<{ width: number; height: number; spacing: number; dept
   );
 };
 
+
+
+const Feet: React.FC<{ width: number; height: number; depth: number }> = ({ width, height, depth }) => {
+  const legLength = 0.25; // 25cm leg
+  const legWidth = 0.03;
+  const angle = 0.5; // radian spread
+
+  // Helper for a single leg with a pad
+  const LegWithPad: React.FC<{ isFront: boolean; zRot: number }> = ({ isFront, zRot }) => {
+    // Front Leg (z=0.1): Rot X = -angle (bottom goes backward/inward)
+    // Back Leg (z=-0.1): Rot X = angle (bottom goes forward/inward)
+    const xRot = isFront ? -angle : angle;
+
+    return (
+      <Mesh position={[0, -0.1, isFront ? 0.1 : -0.1]} rotation={[xRot, 0, zRot]}>
+        <BoxGeometry args={[legWidth, legLength, 0.005]} />
+        <MeshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
+
+        {/* Pad */}
+        <Mesh position={[0, -legLength / 2, 0]} rotation={[-xRot, 0, 0]}>
+          <BoxGeometry args={[0.04, 0.005, 0.06]} />
+          <MeshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
+        </Mesh>
+      </Mesh>
+    );
+  };
+
+  return (
+    <Group>
+      {/* Left Assembly */}
+      <Group position={[-width / 2 - 0.01, -height / 2 + 0.1, 0]}>
+        <LegWithPad isFront={true} zRot={0.1} />
+        <LegWithPad isFront={false} zRot={0.1} />
+        {/* Connection Plate */}
+        <Mesh position={[0, 0, 0]}>
+          <BoxGeometry args={[legWidth, 0.1, 0.15]} />
+          <MeshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
+        </Mesh>
+      </Group>
+
+      {/* Right Assembly */}
+      <Group position={[width / 2 + 0.01, -height / 2 + 0.1, 0]}>
+        <LegWithPad isFront={true} zRot={-0.1} />
+        <LegWithPad isFront={false} zRot={-0.1} />
+        {/* Connection Plate */}
+        <Mesh position={[0, 0, 0]}>
+          <BoxGeometry args={[legWidth, 0.1, 0.15]} />
+          <MeshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
+        </Mesh>
+      </Group>
+    </Group>
+  );
+};
+
 const LightboxModel: React.FC<ModelProps> = ({ config }) => {
-  const { shape, width, height, depth, userImageUrl, viewMode, ledSpacing, isLightOn = true } = config;
+  const { shape, width, height, depth, userImageUrl, viewMode, ledSpacing, isLightOn = true, hasFeet = false, frameColor = '#c0c0c0' } = config;
 
   const scale = 0.01;
   const w = width * scale;
@@ -91,37 +148,38 @@ const LightboxModel: React.FC<ModelProps> = ({ config }) => {
   const isTechnical = viewMode === 'technical';
 
   return (
-    <Group position={[0, h / 2, 0]}>
+    <Group position={[0, h / 2 + (hasFeet ? 0.1 : 0), 0]}> {/* Lift up if standing */}
+      {hasFeet && !isTechnical && <Feet width={w} height={h} depth={d} />}
 
-      {/* GÜMÜŞ KASA ÇERÇEVESİ */}
+      {/* KASA ÇERÇEVESİ - Dynamic Color */}
       <Group>
         {shape === ShapeType.RECTANGLE ? (
           <>
             {/* Üst */}
             <Mesh position={[0, h / 2 - 0.005, 0]}>
               <BoxGeometry args={[w, 0.01, d]} />
-              <MeshStandardMaterial color="#c0c0c0" metalness={1} roughness={0.1} />
+              <MeshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} />
             </Mesh>
             {/* Alt */}
             <Mesh position={[0, -h / 2 + 0.005, 0]}>
               <BoxGeometry args={[w, 0.01, d]} />
-              <MeshStandardMaterial color="#c0c0c0" metalness={1} roughness={0.1} />
+              <MeshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} />
             </Mesh>
             {/* Sol */}
             <Mesh position={[-w / 2 + 0.005, 0, 0]}>
               <BoxGeometry args={[0.01, h, d]} />
-              <MeshStandardMaterial color="#c0c0c0" metalness={1} roughness={0.1} />
+              <MeshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} />
             </Mesh>
             {/* Sağ */}
             <Mesh position={[w / 2 - 0.005, 0, 0]}>
               <BoxGeometry args={[0.01, h, d]} />
-              <MeshStandardMaterial color="#c0c0c0" metalness={1} roughness={0.1} />
+              <MeshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} />
             </Mesh>
           </>
         ) : (
           <Mesh rotation={[Math.PI / 2, 0, 0]}>
             <CylinderGeometry args={[w / 2, w / 2, d, 64, 1, true]} />
-            <MeshStandardMaterial color="#c0c0c0" metalness={1} roughness={0.1} side={THREE.DoubleSide} />
+            <MeshStandardMaterial color={frameColor} metalness={0.9} roughness={0.2} side={THREE.DoubleSide} />
           </Mesh>
         )}
       </Group>
@@ -151,10 +209,17 @@ const LightboxModel: React.FC<ModelProps> = ({ config }) => {
         </Mesh>
       )}
 
-      {/* Arka Kapak Dış Yüzey (Kasanın arkasının boş görünmemesi için) */}
-      <Mesh position={[0, 0, -d / 2]}>
-        {shape === ShapeType.RECTANGLE ? <PlaneGeometry args={[w, h]} /> : <CircleGeometry args={[w / 2, 64]} />}
-        <MeshStandardMaterial color="#050505" side={THREE.BackSide} />
+      {/* Arka Kapak Dış Yüzey: Çift yönlü ise görsel, değilse siyah */}
+      <Mesh position={[0, 0, -d / 2]} rotation={[0, Math.PI, 0]}>
+        {shape === ShapeType.RECTANGLE ? <PlaneGeometry args={[w - 0.005, h - 0.005]} /> : <CircleGeometry args={[w / 2 - 0.005, 64]} />}
+
+        {(config.profile === ProfileType.DOUBLE && userImageUrl) ? (
+          <React.Suspense fallback={<MeshStandardMaterial color="white" />}>
+            <TexturedMaterial url={userImageUrl} isTechnical={isTechnical} isLightOn={isLightOn} />
+          </React.Suspense>
+        ) : (
+          <MeshStandardMaterial color="#050505" />
+        )}
       </Mesh>
     </Group>
   );

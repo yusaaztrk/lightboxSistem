@@ -21,6 +21,12 @@ public class SystemSettings
     // Ses kaydı: "%30 İşçilik... %30 Kar"
     public decimal LaborRatePercentage { get; set; } = 30.0m;
     public decimal ProfitMarginPercentage { get; set; } = 30.0m;
+    
+    // Sadece Kumaş Hesabı için Kar Marjı
+    public decimal FabricProfitMarginPercentage { get; set; } = 30.0m;
+
+    // Ayak (Stand) Ücreti (Takım)
+    public decimal StandPrice { get; set; } = 50.0m;
 
     // --- LED ve ELEKTRİK PARAMETRELERİ ---
     // Ekran görüntüsü: 50cm çubuk 0.5 Amper → 1 Metre = 1.0 Amper

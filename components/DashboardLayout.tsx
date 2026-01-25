@@ -16,8 +16,9 @@ const DashboardLayout: React.FC = () => {
             <aside className="w-64 bg-white border-r border-gray-100 flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.03)] z-20">
                 <div className="p-8 pb-4">
                     <div className="flex items-center gap-2 mb-8">
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">L</div>
-                        <h1 className="text-xl font-bold tracking-tight text-gray-900">Soft<span className="text-indigo-600">Material</span></h1>
+                        <div className="flex items-center gap-2 mb-8">
+                            <img src="/logo_new.png" alt="Lightbox Master" className="h-8 w-auto object-contain rounded-lg" />
+                        </div>
                     </div>
                 </div>
 

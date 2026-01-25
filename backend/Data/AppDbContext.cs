@@ -8,13 +8,20 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     public DbSet<SystemSettings> Settings { get; set; }
-    public DbSet<LedSpacingOption> LedSpacingOptions { get; set; }
+
     public DbSet<Order> Orders { get; set; }
+    public DbSet<ProfileColor> ProfileColors { get; set; }
+    public DbSet<SpinWheelItem> SpinWheelItems { get; set; }
+    public DbSet<CustomerLead> Leads { get; set; }
     
     // New dynamic pricing tables
     public DbSet<ProfileCost> ProfileCosts { get; set; }
     public DbSet<BackingCost> BackingCosts { get; set; }
     public DbSet<AdapterPrice> AdapterPrices { get; set; }
+    
+    // Membership
+    public DbSet<MembershipType> MembershipTypes { get; set; }
+    public DbSet<Member> Members { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,15 +41,21 @@ public class AppDbContext : DbContext
             ProfitMarginPercentage = 30.0m
         });
 
+        // Seed MembershipTypes
+        modelBuilder.Entity<MembershipType>().HasData(
+            new MembershipType { Id = 1, Name = "Müşteri", DiscountPercentage = 0 },
+            new MembershipType { Id = 2, Name = "Bayi", DiscountPercentage = 20 }
+        );
+
         // Seed ProfileCosts (Updated 10cm prices)
         modelBuilder.Entity<ProfileCost>().HasData(
             new ProfileCost { Id = 1, DepthCm = 4.5m, IsDoubleSided = false, PricePerMeter = 4.30m, Name = "4.5cm Tek Taraf" },
             new ProfileCost { Id = 2, DepthCm = 8m, IsDoubleSided = false, PricePerMeter = 5.00m, Name = "8cm Tek Taraf" },
             new ProfileCost { Id = 3, DepthCm = 10m, IsDoubleSided = false, PricePerMeter = 7.00m, Name = "10cm Tek Taraf" }, // Updated to $7.00
-            new ProfileCost { Id = 4, DepthCm = 12m, IsDoubleSided = false, PricePerMeter = 7.50m, Name = "12cm Tek Taraf" },
+            new ProfileCost { Id = 4, DepthCm = 12m, IsDoubleSided = false, PricePerMeter = 11.00m, Name = "12cm Tek Taraf" },
             new ProfileCost { Id = 5, DepthCm = 8m, IsDoubleSided = true, PricePerMeter = 6.00m, Name = "8cm Çift Taraf" },
             new ProfileCost { Id = 6, DepthCm = 10m, IsDoubleSided = true, PricePerMeter = 10.00m, Name = "10cm Çift Taraf" }, // Updated to $10.00
-            new ProfileCost { Id = 7, DepthCm = 12m, IsDoubleSided = true, PricePerMeter = 15.00m, Name = "12cm Çift Taraf" }
+            new ProfileCost { Id = 7, DepthCm = 12m, IsDoubleSided = true, PricePerMeter = 12.00m, Name = "12cm Çift Taraf" }
         );
 
         // Seed BackingCosts (Added 3mm/5mm MDF)

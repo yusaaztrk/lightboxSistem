@@ -17,17 +17,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/login" element={<LoginPage />} />
-
-        {/* Admin Dashboard Routes */}
-        <Route path="/admin" element={<DashboardLayout />}>
-          <Route index element={<OrdersPage />} /> {/* Default to orders */}
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="settings" element={<AdminSettings />} />
-        </Route>
-      </Routes>
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 );

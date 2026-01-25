@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LightboxBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260121223805_AddPricingTables")]
-    partial class AddPricingTables
+    [Migration("20260124224813_AddCostDetailsToOrder")]
+    partial class AddCostDetailsToOrder
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -154,18 +154,102 @@ namespace LightboxBackend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LightboxBackend.Models.LedSpacingOption", b =>
+            modelBuilder.Entity("LightboxBackend.Models.CustomerLead", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Cm")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscountCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DiscountPercentage")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WonPrizeLabel")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("LedSpacingOptions");
+                    b.ToTable("Leads");
+                });
+
+            modelBuilder.Entity("LightboxBackend.Models.Member", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MembershipTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MembershipTypeId");
+
+                    b.ToTable("Members");
+                });
+
+            modelBuilder.Entity("LightboxBackend.Models.MembershipType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DiscountPercentage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MembershipTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DiscountPercentage = 0,
+                            Name = "Müşteri"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            DiscountPercentage = 20,
+                            Name = "Bayi"
+                        });
                 });
 
             modelBuilder.Entity("LightboxBackend.Models.Order", b =>
@@ -175,6 +259,10 @@ namespace LightboxBackend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ConfigurationDetails")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CostDetails")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -204,6 +292,29 @@ namespace LightboxBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("LightboxBackend.Models.ProfileColor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CmykCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HexCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProfileColors");
                 });
 
             modelBuilder.Entity("LightboxBackend.Models.ProfileCost", b =>
@@ -252,7 +363,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 10m,
                             IsDoubleSided = false,
                             Name = "10cm Tek Taraf",
-                            PricePerMeter = 6.00m
+                            PricePerMeter = 7.00m
                         },
                         new
                         {
@@ -260,7 +371,7 @@ namespace LightboxBackend.Migrations
                             DepthCm = 12m,
                             IsDoubleSided = false,
                             Name = "12cm Tek Taraf",
-                            PricePerMeter = 7.50m
+                            PricePerMeter = 11.00m
                         },
                         new
                         {
@@ -284,8 +395,36 @@ namespace LightboxBackend.Migrations
                             DepthCm = 12m,
                             IsDoubleSided = true,
                             Name = "12cm Çift Taraf",
-                            PricePerMeter = 15.00m
+                            PricePerMeter = 12.00m
                         });
+                });
+
+            modelBuilder.Entity("LightboxBackend.Models.SpinWheelItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ColorHex")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DiscountPercentage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsLoss")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Probability")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SpinWheelItems");
                 });
 
             modelBuilder.Entity("LightboxBackend.Models.SystemSettings", b =>
@@ -305,6 +444,9 @@ namespace LightboxBackend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("CornerPiecePrice")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("FabricProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("LaborRatePercentage")
@@ -330,6 +472,9 @@ namespace LightboxBackend.Migrations
                     b.Property<decimal>("ProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("StandPrice")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("Settings");
@@ -342,14 +487,27 @@ namespace LightboxBackend.Migrations
                             AmperesPerMeter = 1.0m,
                             CableFixedCost = 6.00m,
                             CornerPiecePrice = 0.70m,
+                            FabricProfitMarginPercentage = 30.0m,
                             LaborRatePercentage = 30.0m,
                             LedIndoorPricePerMeter = 2.00m,
                             LedOutdoorPricePerMeter = 3.00m,
                             LedSpacingOptionsJson = "[15]",
                             PrintCostPerM2 = 10.00m,
                             ProfileCostsJson = "[]",
-                            ProfitMarginPercentage = 30.0m
+                            ProfitMarginPercentage = 30.0m,
+                            StandPrice = 50.0m
                         });
+                });
+
+            modelBuilder.Entity("LightboxBackend.Models.Member", b =>
+                {
+                    b.HasOne("LightboxBackend.Models.MembershipType", "MembershipType")
+                        .WithMany()
+                        .HasForeignKey("MembershipTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MembershipType");
                 });
 #pragma warning restore 612, 618
         }

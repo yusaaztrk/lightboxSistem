@@ -5,31 +5,31 @@
 namespace LightboxBackend.Migrations
 {
     /// <inheritdoc />
-    public partial class AddLedJson : Migration
+    public partial class AddFabricProfitMargin : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "LedSpacingOptionsJson",
+            migrationBuilder.AddColumn<decimal>(
+                name: "FabricProfitMarginPercentage",
                 table: "Settings",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: 0m);
 
             migrationBuilder.UpdateData(
                 table: "Settings",
                 keyColumn: "Id",
                 keyValue: 1,
-                column: "LedSpacingOptionsJson",
-                value: "[10,15]");
+                column: "FabricProfitMarginPercentage",
+                value: 30.0m);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "LedSpacingOptionsJson",
+                name: "FabricProfitMarginPercentage",
                 table: "Settings");
         }
     }

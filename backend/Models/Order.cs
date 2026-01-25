@@ -17,6 +17,9 @@ namespace LightboxBackend.Models
         // Detailed configuration stored as JSON or detailed string
         public string ConfigurationDetails { get; set; } = string.Empty; 
         
+        // Full Cost Breakdown JSON
+        public string CostDetails { get; set; } = string.Empty; 
+        
         public string Status { get; set; } = "Pending"; // Pending, Completed, Cancelled
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

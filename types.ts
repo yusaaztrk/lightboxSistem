@@ -9,7 +9,7 @@ export enum ProfileType {
   DOUBLE = 'DOUBLE'
 }
 
-export type BackplateType = 'MDF_4MM' | 'DEKOTA_4_5MM' | 'KOMPOZIT_4MM';
+export type BackplateType = 'MDF_3MM' | 'MDF_5MM' | 'DEKOTA_4_5MM' | 'KOMPOZIT_4MM';
 export type LedType = 'INNER' | 'OUTER';
 
 export interface ConfigOptions {
@@ -20,6 +20,7 @@ export interface ConfigOptions {
   sheetWidth: number;
   sheetHeight: number;
   depth: number;
+  ledSpacing?: number;
   profile: ProfileType;
   ledType: LedType;
   backplate: BackplateType;
@@ -27,6 +28,10 @@ export interface ConfigOptions {
   userImageUrl?: string | null;
   viewMode: 'finish' | 'technical';
   isLightOn?: boolean;
+  hasFeet?: boolean;
+  profileId?: number;
+  frameColor?: string; // Hex code for 3D
+  profileColorId?: number;
 }
 
 export interface PricingFactors {
@@ -38,6 +43,8 @@ export interface PricingFactors {
   cornerPiecePrice: number;
   cablePrice: number;
   ledSpacingOptions: number[]; // Adminin belirlediği seçenekler (örn: [10, 15, 20])
+  fabricProfitMarginPercentage: number;
+  standPrice: number;
 }
 
 export interface LedLayoutResult {
@@ -56,6 +63,7 @@ export interface CalculationBreakdown {
   adapterCost: number;
   cableCost: number;
   cornerPieceCost: number;
+  standCost: number;
   rawMaterialTotal: number;
   laborCost: number;
   laboredTotal: number;
@@ -66,6 +74,15 @@ export interface CalculationBreakdown {
   adapterName: string;
   requiredAmperes: number;
   selectedAmperes: number;
+  perimeter: number;
+  areaM2: number;
+}
+
+export interface ProfileColor {
+  id: number;
+  name: string;
+  hexCode: string;
+  cmykCode: string;
 }
 
 export interface CalculationResult {
@@ -86,12 +103,13 @@ export interface MockupScene {
 
 export interface Order {
   id: number;
-  customerName?: string;
+  customerName: string;
   customerEmail?: string;
-  customerPhone?: string;
+  customerPhone: string;
   dimensions: string;
   price: number;
   configurationDetails: string;
+  costDetails: string; // New field
   status: string;
   createdAt: string;
 }
@@ -118,5 +136,22 @@ export interface AdapterPrice {
   amperage: number;
   wattage: number;
   price: number;
+}
+
+export interface SpinWheelItem {
+  id: number;
+  label: string;
+  discountPercentage: number;
+  probability: number;
+  colorHex: string;
+  isLoss: boolean;
+}
+
+export interface CustomerLead {
+  id: number;
+  phoneNumber: string;
+  wonPrizeLabel: string;
+  discountCode: string;
+  createdAt: string;
 }
 

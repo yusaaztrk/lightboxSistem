@@ -30,14 +30,29 @@ public class LedOptimizationService
     private LedLayoutResult CalculateVerticalLayout(decimal widthCm, decimal heightCm, 
                                                      bool isDoubleSided, decimal ledPrice)
     {
-        // Deduct 10cm total (5cm from each side)
-        var usableWidth = widthCm - (2 * EDGE_MARGIN_CM);
+        // 5cm margin on both sides
+        var spanWidth = widthCm - (2 * EDGE_MARGIN_CM);
         
-        // Calculate number of strips (15cm spacing)
-        var stripCount = (int)Math.Ceiling(usableWidth / LED_SPACING_CM);
-        stripCount = Math.Max(1, stripCount); // At least 1 strip
+        // If box is too small (< 10cm), assume 1 central strip or handle gracefully
+        if (spanWidth <= 0)
+        {
+             var singleStripLength = (heightCm - LENGTH_MARGIN_CM) / 100; 
+             return new LedLayoutResult {
+                Direction = "Vertical",
+                StripCount = isDoubleSided ? 2 : 1,
+                StripLength = singleStripLength,
+                TotalLedMeters = isDoubleSided ? singleStripLength * 2 : singleStripLength,
+                TotalCost = (isDoubleSided ? singleStripLength * 2 : singleStripLength) * ledPrice
+             };
+        }
+
+        // Calculate number of GAPS needed to cover the span with max 15cm spacing
+        var gapCount = (int)Math.Ceiling(spanWidth / LED_SPACING_CM);
         
-        // Each strip runs the full height MINUS mounting margin
+        // Total strips = Gaps + 1 (Start strip + End strip + intermediates)
+        var stripCount = gapCount + 1;
+        
+        // Each strip runs the full height MINUS margins (2cm soldering)
         var stripLength = (heightCm - LENGTH_MARGIN_CM) / 100; // Convert to meters
         
         var totalMeters = stripCount * stripLength;
@@ -56,14 +71,26 @@ public class LedOptimizationService
     private LedLayoutResult CalculateHorizontalLayout(decimal widthCm, decimal heightCm, 
                                                        bool isDoubleSided, decimal ledPrice)
     {
-        // Deduct 10cm total (5cm from top and bottom)
-        var usableHeight = heightCm - (2 * EDGE_MARGIN_CM);
+        // 5cm margin on top and bottom
+        var spanHeight = heightCm - (2 * EDGE_MARGIN_CM);
         
-        // Calculate number of strips (15cm spacing)
-        var stripCount = (int)Math.Ceiling(usableHeight / LED_SPACING_CM);
-        stripCount = Math.Max(1, stripCount);
+        if (spanHeight <= 0)
+        {
+             var singleStripLength = (widthCm - LENGTH_MARGIN_CM) / 100; 
+             return new LedLayoutResult {
+                Direction = "Horizontal",
+                StripCount = isDoubleSided ? 2 : 1,
+                StripLength = singleStripLength,
+                TotalLedMeters = isDoubleSided ? singleStripLength * 2 : singleStripLength,
+                TotalCost = (isDoubleSided ? singleStripLength * 2 : singleStripLength) * ledPrice
+             };
+        }
         
-        // Each strip runs the full width MINUS mounting margin
+        // Calculate number of GAPS
+        var gapCount = (int)Math.Ceiling(spanHeight / LED_SPACING_CM);
+        var stripCount = gapCount + 1;
+        
+        // Each strip runs the full width MINUS margins (2cm soldering)
         var stripLength = (widthCm - LENGTH_MARGIN_CM) / 100; // Convert to meters
         
         var totalMeters = stripCount * stripLength;

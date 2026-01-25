@@ -20,8 +20,8 @@ const LoginPage: React.FC = () => {
         <div className="h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] p-10 border border-gray-100">
                 <div className="flex justify-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20">
-                        <Box className="w-8 h-8 text-white" />
+                    <div className="flex justify-center mb-8">
+                        <img src="/logo_new.png" alt="Lightbox Master" className="h-16 w-auto object-contain rounded-xl" />
                     </div>
                 </div>
 

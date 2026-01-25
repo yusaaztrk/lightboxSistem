@@ -37,7 +37,9 @@ public class CalculationController : ControllerBase
                 isDouble,
                 config.LedType,
                 config.Backplate,
-                settings
+                settings,
+                config.ProfileId,
+                config.HasFeet
             );
 
             return Ok(breakdown);
@@ -57,4 +59,6 @@ public class ConfigOptionsDTO
     public string Profile { get; set; }
     public string LedType { get; set; }
     public string Backplate { get; set; }
+    public int? ProfileId { get; set; }
+    public bool HasFeet { get; set; }
 }

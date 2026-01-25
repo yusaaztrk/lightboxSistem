@@ -8,6 +8,7 @@ const OrdersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('All');
 
     useEffect(() => {
         loadOrders();
@@ -22,6 +23,21 @@ const OrdersPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const filteredOrders = orders.filter(order => {
+        if (activeTab === 'All') return true;
+        if (activeTab === 'Pending') return order.status === 'Pending' || !order.status;
+        if (activeTab === 'Completed') return order.status === 'Completed';
+        if (activeTab === 'Shipped') return order.status === 'Shipped';
+        if (activeTab === 'Cancelled') return order.status === 'Cancelled';
+        return true;
+    });
+
+    const stats = {
+        total: orders.length,
+        completed: orders.filter(o => o.status === 'Completed' || o.status === 'Shipped').length,
+        pending: orders.filter(o => o.status === 'Pending' || !o.status).length
     };
 
     return (
@@ -50,37 +66,61 @@ const OrdersPage: React.FC = () => {
                             <Package className="w-24 h-24 text-indigo-500" />
                         </div>
                         <span className="text-xs font-black text-indigo-400 uppercase tracking-widest block mb-2">TOPLAM SİPARİŞ</span>
-                        <span className="text-4xl font-black text-white tracking-tighter">{orders.length}</span>
+                        <span className="text-4xl font-black text-white tracking-tighter">{stats.total}</span>
                     </div>
                     <div className="bg-emerald-600/10 border border-emerald-500/20 p-6 rounded-3xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10">
                             <CheckCircle className="w-24 h-24 text-emerald-500" />
                         </div>
                         <span className="text-xs font-black text-emerald-400 uppercase tracking-widest block mb-2">TAMAMLANAN</span>
-                        <span className="text-4xl font-black text-white tracking-tighter">{orders.filter(o => o.status === 'Completed').length}</span>
+                        <span className="text-4xl font-black text-white tracking-tighter">{stats.completed}</span>
                     </div>
                     <div className="bg-orange-600/10 border border-orange-500/20 p-6 rounded-3xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10">
                             <Clock className="w-24 h-24 text-orange-500" />
                         </div>
                         <span className="text-xs font-black text-orange-400 uppercase tracking-widest block mb-2">BEKLEYEN</span>
-                        <span className="text-4xl font-black text-white tracking-tighter">{orders.filter(o => o.status === 'Pending').length}</span>
+                        <span className="text-4xl font-black text-white tracking-tighter">{stats.pending}</span>
                     </div>
                 </div>
 
                 {/* Orders List */}
                 <div className="bg-[#0a0a0c] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                    <div className="p-8 border-b border-white/5 flex flex-col md:flex-row gap-6 justify-between items-center">
-                        <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
-                            <Package className="w-5 h-5 text-indigo-500" /> SON SİPARİŞLER
-                        </h2>
-                        <div className="relative group w-full md:w-auto">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Sipariş Ara..."
-                                className="w-full md:w-80 bg-black/20 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-gray-300 focus:outline-none focus:border-indigo-500/50 focus:bg-indigo-500/5 transition-all placeholder:text-gray-700"
-                            />
+                    <div className="p-8 border-b border-white/5 flex flex-col gap-6">
+                        <div className="flex flex-col md:flex-row gap-6 justify-between items-center">
+                            <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
+                                <Package className="w-5 h-5 text-indigo-500" /> SİPARİŞ LİSTESİ
+                            </h2>
+                            <div className="relative group w-full md:w-auto">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Sipariş Ara..."
+                                    className="w-full md:w-80 bg-black/20 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-gray-300 focus:outline-none focus:border-indigo-500/50 focus:bg-indigo-500/5 transition-all placeholder:text-gray-700"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                            {[
+                                { id: 'All', label: 'TÜMÜ' },
+                                { id: 'Pending', label: 'BEKLEYEN' },
+                                { id: 'Completed', label: 'ONAYLANAN' },
+                                { id: 'Shipped', label: 'KARGOLANAN' },
+                                { id: 'Cancelled', label: 'İPTAL EDİLEN' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === tab.id
+                                        ? 'bg-white text-black shadow-lg scale-105'
+                                        : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
@@ -94,10 +134,11 @@ const OrdersPage: React.FC = () => {
                                     <th className="px-8 py-5">TUTAR</th>
                                     <th className="px-8 py-5">TARİH</th>
                                     <th className="px-8 py-5 text-center">DURUM</th>
+                                    <th className="px-8 py-5 text-right">İŞLEMLER</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {orders.map((order) => (
+                                {filteredOrders.map((order) => (
                                     <tr key={order.id} className="hover:bg-white/[0.02] transition-colors group">
                                         <td className="px-8 py-5 font-mono text-xs text-gray-400">#{order.id.toString().padStart(6, '0')}</td>
                                         <td className="px-8 py-5">
@@ -115,18 +156,29 @@ const OrdersPage: React.FC = () => {
                                         </td>
                                         <td className="px-8 py-5 text-center">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${order.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                order.status === 'Shipped' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                                     order.status === 'Cancelled' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                                         'bg-orange-500/10 text-orange-400 border-orange-500/20'
                                                 }`}>
-                                                {order.status === 'Completed' ? 'TAMAMLANDI' : order.status === 'Cancelled' ? 'İPTAL EDİLDİ' : 'BEKLİYOR'}
+                                                {order.status === 'Completed' ? 'ONAYLANDI' :
+                                                    order.status === 'Shipped' ? 'KARGOLANDI' :
+                                                        order.status === 'Cancelled' ? 'İPTAL EDİLDİ' : 'BEKLİYOR'}
                                             </span>
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                            <button
+                                                onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                                className="text-indigo-600 hover:text-indigo-800 font-bold text-xs uppercase tracking-wider border border-indigo-100 bg-indigo-50 px-3 py-1.5 rounded-lg transition"
+                                            >
+                                                DETAY
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
-                                {orders.length === 0 && !loading && (
+                                {filteredOrders.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={6} className="px-8 py-16 text-center text-gray-600 text-sm font-bold uppercase tracking-widest">
-                                            HENÜZ SİPARİŞ BULUNMUYOR
+                                        <td colSpan={7} className="px-8 py-16 text-center text-gray-600 text-sm font-bold uppercase tracking-widest">
+                                            {activeTab === 'All' ? 'HENÜZ SİPARİŞ BULUNMUYOR' : 'BU KATEGORİDE SİPARİŞ YOK'}
                                         </td>
                                     </tr>
                                 )}

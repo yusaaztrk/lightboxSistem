@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { PricingFactors, Order, ConfigOptions, CalculationBreakdown, ProfileCost, BackingCost, AdapterPrice } from '../types';
+import { PricingFactors, Order, ConfigOptions, CalculationBreakdown, ProfileCost, BackingCost, AdapterPrice, ProfileColor, SpinWheelItem, CustomerLead } from '../types';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -31,7 +31,9 @@ export const api = {
       ledSpacingOptions: [],
       pricePerSqMeterPrinting: data.printCostPerM2,
       cornerPiecePrice: data.cornerPiecePrice,
-      cablePrice: data.cableFixedCost
+      cablePrice: data.cableFixedCost,
+      fabricProfitMarginPercentage: 30, // Default for type compatibility
+      standPrice: 0 // Default
     };
   },
 
@@ -64,9 +66,22 @@ export const api = {
     return response.data;
   },
 
+  async getOrder(id: number | string): Promise<Order> {
+    const response = await axios.get<Order>(`${API_URL}/orders/${id}`);
+    return response.data;
+  },
+
   async createOrder(order: any): Promise<Order> {
     const response = await axios.post<Order>(`${API_URL}/orders`, order);
     return response.data;
+  },
+
+  async updateOrder(id: number | string, order: Order): Promise<void> {
+    await axios.put(`${API_URL}/orders/${id}`, order);
+  },
+
+  async deleteOrder(id: number | string): Promise<void> {
+    await axios.delete(`${API_URL}/orders/${id}`);
   },
 
   async calculateDetails(config: ConfigOptions): Promise<CalculationBreakdown> {
@@ -76,7 +91,8 @@ export const api = {
       depth: config.depth,
       profile: config.profile,
       ledType: config.ledType,
-      backplate: config.backplate
+      backplate: config.backplate,
+      profileId: config.profileId
     };
     const response = await axios.post<CalculationBreakdown>(`${API_URL}/calculation`, payload);
     return response.data;
@@ -130,5 +146,72 @@ export const api = {
   },
   async deleteAdapterPrice(id: number): Promise<void> {
     await axios.delete(`${API_URL}/adapterprices/${id}`);
+  },
+  async getProfileColors() {
+    try {
+      const res = await axios.get<ProfileColor[]>(`${API_URL}/profilecolors`);
+      return res.data;
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  },
+  async addProfileColor(color: ProfileColor) {
+    return axios.post(`${API_URL}/profilecolors`, color);
+  },
+  async deleteProfileColor(id: number) {
+    return axios.delete(`${API_URL}/profilecolors/${id}`);
+  },
+
+  // --- Spin Wheel ---
+  async getWheelConfig() {
+    return (await axios.get<SpinWheelItem[]>(`${API_URL}/spinwheel/config`)).data;
+  },
+  async addWheelItem(item: Partial<SpinWheelItem>) {
+    return (await axios.post<SpinWheelItem>(`${API_URL}/spinwheel/config`, item)).data;
+  },
+  async deleteWheelItem(id: number) {
+    return axios.delete(`${API_URL}/spinwheel/config/${id}`);
+  },
+  async spinWheel(phoneNumber: string) {
+    return (await axios.post(`${API_URL}/spinwheel/spin`, { phoneNumber })).data;
+  },
+  async getLeads() {
+    return (await axios.get<CustomerLead[]>(`${API_URL}/spinwheel/leads`)).data;
+  },
+  async validateCode(code: string, phoneNumber: string) {
+    return (await axios.post<{ percentage: number, owner: string }>(`${API_URL}/spinwheel/validate`, { code, phoneNumber })).data;
+  },
+
+  // --- Membership ---
+  async registerMember(data: any) {
+    return axios.post(`${API_URL}/membership/register`, data);
+  },
+  async getMembers() {
+    return (await axios.get<any[]>(`${API_URL}/membership/members`)).data;
+  },
+  async getMembershipTypes() {
+    return (await axios.get<any[]>(`${API_URL}/membership/types`)).data;
+  },
+  async createMembershipType(type: any) {
+    return (await axios.post(`${API_URL}/membership/types`, type)).data;
+  },
+  async updateMembershipType(id: number, type: any) {
+    return axios.put(`${API_URL}/membership/types/${id}`, type);
+  },
+  async deleteMembershipType(id: number) {
+    return axios.delete(`${API_URL}/membership/types/${id}`);
+  },
+  async approveMember(id: number) {
+    return axios.post(`${API_URL}/membership/approve/${id}`);
+  },
+  async deleteMember(id: number) {
+    return axios.delete(`${API_URL}/membership/${id}`);
+  },
+  async checkMembership(phoneNumber: string) {
+    return (await axios.get<{ hasMembership: boolean, discount: number, typeName: string, memberName: string }>(`${API_URL}/membership/check/${phoneNumber}`)).data;
+  },
+  async deleteLead(id: number) {
+    return axios.delete(`${API_URL}/spinwheel/lead/${id}`);
   }
 };
