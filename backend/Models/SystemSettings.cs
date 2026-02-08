@@ -32,6 +32,9 @@ public class SystemSettings
     // Ekran görüntüsü: 50cm çubuk 0.5 Amper → 1 Metre = 1.0 Amper
     public decimal AmperesPerMeter { get; set; } = 1.0m;
 
+    // Default LED dizim aralığı (cm) - Zemin üzerinde override yoksa kullanılır
+    public decimal DefaultLedSpacingCm { get; set; } = 15.0m;
+
     // Ekran görüntüsü: İç mekan adet (50cm) 1$ → Metresi 2$
     public decimal LedIndoorPricePerMeter { get; set; } = 2.00m;
 

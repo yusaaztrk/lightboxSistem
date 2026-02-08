@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box } from 'lucide-react';
+import { api } from '../services/api';
 
 const LoginPage: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === 'admin' && password === 'admin123') {
+        try {
+            // Using the new API endpoint
+            await api.adminLogin({ username, password });
+
+            // Set simple auth flag
+            localStorage.setItem('isAdminAuthenticated', 'true');
             navigate('/admin/orders');
-        } else {
+        } catch (error) {
+            console.error("Login failed", error);
             alert('Hatalı kullanıcı adı veya şifre!');
         }
     };

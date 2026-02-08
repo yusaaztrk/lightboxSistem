@@ -104,12 +104,12 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
     if (successMessage) {
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                <div className="bg-[#121214] border border-white/10 rounded-3xl p-8 shadow-2xl text-center max-w-sm">
+                <div className="bg-[var(--app-surface-2)] border border-[var(--app-border)] rounded-3xl p-8 shadow-2xl text-center max-w-sm">
                     <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Check className="w-8 h-8 text-emerald-400" />
                     </div>
-                    <h3 className="text-xl font-black text-white mb-2">BAŞVURU ALINDI</h3>
-                    <p className="text-gray-400 text-sm">{successMessage}</p>
+                    <h3 className="text-xl font-black text-[var(--app-text)] mb-2">BAŞVURU ALINDI</h3>
+                    <p className="text-[var(--app-muted)] text-sm">{successMessage}</p>
                 </div>
             </div>
         );
@@ -117,54 +117,54 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={20} /></button>
+            <div className="bg-[var(--app-surface-2)] border border-[var(--app-border)] rounded-3xl w-full max-w-md p-8 shadow-2xl relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-[var(--app-muted)] hover:text-[var(--app-text)]"><X size={20} /></button>
 
-                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-1">ÜYELİK BAŞVURUSU</h2>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-6">Müşteri veya Bayi olarak kaydolun</p>
+                <h2 className="text-2xl font-black text-[var(--app-text)] uppercase italic tracking-tighter mb-1">ÜYELİK BAŞVURUSU</h2>
+                <p className="text-[var(--app-muted)] text-xs font-bold uppercase tracking-widest mb-6">Müşteri veya Bayi olarak kaydolun</p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Üyelik Tipi</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Üyelik Tipi</label>
                         <div className="grid grid-cols-2 gap-3">
                             {membershipTypes.map(type => (
                                 <button
                                     key={type.id}
                                     type="button"
                                     onClick={() => setFormData({ ...formData, membershipTypeId: type.id })}
-                                    className={`py-3 rounded-xl text-xs font-black transition-all border ${formData.membershipTypeId === type.id ? 'border-indigo-500 bg-indigo-500/20 text-white shadow-lg shadow-indigo-500/10' : 'border-white/10 text-gray-500 hover:bg-white/5'}`}
+                                    className={`py-3 rounded-xl text-xs font-black transition-all border ${formData.membershipTypeId === type.id ? 'border-indigo-500 bg-indigo-500/20 text-[var(--app-text)] shadow-lg shadow-indigo-500/10' : 'border-[var(--app-border)] text-[var(--app-muted)] hover:bg-[var(--app-border)]'}`}
                                 >
                                     {type.name.toUpperCase()}
                                 </button>
                             ))}
-                            {membershipTypes.length === 0 && <span className="text-gray-500 text-xs">Yükleniyor...</span>}
+                            {membershipTypes.length === 0 && <span className="text-[var(--app-muted)] text-xs">Yükleniyor...</span>}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Ad Soyad</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Ad Soyad</label>
                         <div className="relative">
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--app-muted)]" />
                             <input
                                 required
                                 value={formData.fullName}
                                 onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                                className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full pl-11 pr-4 py-4 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-2xl text-[var(--app-text)] font-bold outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="Adınız Soyadınız"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Telefon</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Telefon</label>
                         <div className="relative">
-                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--app-muted)]" />
                             <input
                                 required
                                 type="tel"
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
-                                className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full pl-11 pr-4 py-4 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-2xl text-[var(--app-text)] font-bold outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="05XX XXX XX XX"
                                 maxLength={14}
                             />
@@ -172,14 +172,14 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Firma Adı</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Firma Adı</label>
                         <div className="relative">
-                            <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--app-muted)]" />
                             <input
                                 required
                                 value={formData.companyName}
                                 onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full pl-11 pr-4 py-4 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-2xl text-[var(--app-text)] font-bold outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="Firma ünvanınız"
                             />
                         </div>

@@ -10,6 +10,7 @@ public class BackingCost
     public string MaterialType { get; set; } = string.Empty; // "MDF_3MM", "DEKOTA_4_5MM", etc.
     public string DisplayName { get; set; } = string.Empty; // "3 MM MDF"
     public decimal PricePerM2 { get; set; } // M² fiyatı
+    public decimal? LedSpacingCm { get; set; } // Zemine göre LED dizim aralığı (cm). Null => Sistem default.
     
     // Helper property
     public string FullDisplayName => $"{DisplayName} - ${PricePerM2}/m²";

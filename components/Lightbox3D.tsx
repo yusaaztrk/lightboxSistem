@@ -137,7 +137,7 @@ const Feet: React.FC<{ width: number; height: number; depth: number }> = ({ widt
 };
 
 const LightboxModel: React.FC<ModelProps> = ({ config }) => {
-  const { shape, width, height, depth, userImageUrl, viewMode, ledSpacing, isLightOn = true, hasFeet = false, frameColor = '#c0c0c0' } = config;
+  const { shape, width, height, depth, userImageUrl, backImageUrl, viewMode, ledSpacing, isLightOn = true, hasFeet = false, frameColor = '#c0c0c0' } = config;
 
   const scale = 0.01;
   const w = width * scale;
@@ -213,9 +213,9 @@ const LightboxModel: React.FC<ModelProps> = ({ config }) => {
       <Mesh position={[0, 0, -d / 2]} rotation={[0, Math.PI, 0]}>
         {shape === ShapeType.RECTANGLE ? <PlaneGeometry args={[w - 0.005, h - 0.005]} /> : <CircleGeometry args={[w / 2 - 0.005, 64]} />}
 
-        {(config.profile === ProfileType.DOUBLE && userImageUrl) ? (
+        {(config.profile === ProfileType.DOUBLE && backImageUrl) ? (
           <React.Suspense fallback={<MeshStandardMaterial color="white" />}>
-            <TexturedMaterial url={userImageUrl} isTechnical={isTechnical} isLightOn={isLightOn} />
+            <TexturedMaterial url={backImageUrl as string} isTechnical={isTechnical} isLightOn={isLightOn} />
           </React.Suspense>
         ) : (
           <MeshStandardMaterial color="#050505" />

@@ -1,116 +1,141 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Settings, LogOut, Bell, Search, Globe, ChevronDown, User } from 'lucide-react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import {
+    LayoutDashboard, Settings, LogOut, Bell, Search, Globe, ChevronDown, User,
+    Layers, Palette, Disc, Users, Database, Zap
+} from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    React.useEffect(() => {
+        const isAuth = localStorage.getItem('isAdminAuthenticated');
+        if (!isAuth) {
+            navigate('/login');
+        }
+    }, [navigate]);
 
     const handleLogout = () => {
-        // In a real app, clear auth tokens here
+        localStorage.removeItem('isAdminAuthenticated');
         navigate('/login');
     };
 
+    const navItemClass = ({ isActive }: { isActive: boolean }) =>
+        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
+            ? 'bg-brand-cyan text-white shadow-lg shadow-brand-cyan/20'
+            : 'text-admin-text-muted hover:bg-white/5 hover:text-white'
+        }`;
+
     return (
-        <div className="flex h-screen bg-[#F3F4F6] text-[#1F2937] font-sans selection:bg-indigo-500 selection:text-white">
+        <div className="flex h-screen bg-admin-dark text-admin-text-main font-sans selection:bg-brand-cyan selection:text-white">
             {/* SIDEBAR */}
-            <aside className="w-64 bg-white border-r border-gray-100 flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.03)] z-20">
-                <div className="p-8 pb-4">
-                    <div className="flex items-center gap-2 mb-8">
-                        <div className="flex items-center gap-2 mb-8">
-                            <img src="/logo_new.png" alt="Lightbox Master" className="h-8 w-auto object-contain rounded-lg" />
-                        </div>
-                    </div>
+            <aside className="w-72 bg-[#0F1623] border-r border-admin-border flex flex-col shadow-2xl z-20">
+                <div className="p-8 pb-4 flex justify-center">
+                    <img src="/logo_new.png" alt="Lightbox Logo" className="h-12 w-auto object-contain" />
                 </div>
 
-                <nav className="flex-1 px-4 space-y-1">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 mb-2 mt-4">Dashboard</div>
+                <nav className="flex-1 px-4 space-y-1 mt-6 overflow-y-auto custom-scrollbar">
+                    <div className="text-[10px] font-black text-admin-text-muted/50 uppercase tracking-widest px-4 mb-3 mt-2">Genel Bakış</div>
 
-                    <NavLink
-                        to="/admin/orders"
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
-                                ? 'bg-indigo-50 text-indigo-600 shadow-sm'
-                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                            }`
-                        }
-                    >
+                    <NavLink to="/admin/orders" className={navItemClass}>
                         <LayoutDashboard className="w-5 h-5" />
-                        <span>Dashboard</span>
+                        <span>Siparişler</span>
                     </NavLink>
 
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 mb-2 mt-6">Components</div>
+                    <div className="text-[10px] font-black text-admin-text-muted/50 uppercase tracking-widest px-4 mb-3 mt-8">Veri Yönetimi</div>
 
-                    <NavLink
-                        to="/admin/settings"
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
-                                ? 'bg-indigo-50 text-indigo-600 shadow-sm'
-                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                            }`
-                        }
-                    >
+                    <NavLink to="/admin/general" className={navItemClass}>
                         <Settings className="w-5 h-5" />
-                        <span>Settings</span>
+                        <span>Genel Ayarlar</span>
+                    </NavLink>
+                    <NavLink to="/admin/profiles" className={navItemClass}>
+                        <Layers className="w-5 h-5" />
+                        <span>Profiller</span>
+                    </NavLink>
+                    <NavLink to="/admin/backing" className={navItemClass}>
+                        <Database className="w-5 h-5" />
+                        <span>Zemin</span>
+                    </NavLink>
+                    <NavLink to="/admin/adapters" className={navItemClass}>
+                        <Zap className="w-5 h-5" />
+                        <span>Adaptörler</span>
+                    </NavLink>
+                    <NavLink to="/admin/colors" className={navItemClass}>
+                        <Palette className="w-5 h-5" />
+                        <span>Renkler</span>
+                    </NavLink>
+                    <NavLink to="/admin/wheel" className={navItemClass}>
+                        <Disc className="w-5 h-5" />
+                        <span>Çark & Çekiliş</span>
+                    </NavLink>
+                    <NavLink to="/admin/members" className={navItemClass}>
+                        <Users className="w-5 h-5" />
+                        <span>Üyeler</span>
                     </NavLink>
                 </nav>
 
                 <div className="p-4 mt-auto">
-                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg shadow-indigo-200">
-                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-3">
-                            <Globe className="w-4 h-4 text-white" />
+                    <div className="bg-admin-card rounded-2xl p-5 text-white border border-admin-border relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition">
+                            <Globe className="w-16 h-16 text-brand-cyan" />
                         </div>
-                        <h4 className="font-bold text-sm mb-1">Live Website</h4>
-                        <p className="text-[10px] opacity-80 mb-3">View your public storefront</p>
-                        <button onClick={() => window.open('/', '_blank')} className="w-full bg-white text-indigo-600 py-2 rounded-lg text-xs font-bold hover:bg-indigo-50 transition">
-                            Visit Site
+                        <h4 className="font-bold text-sm mb-1 relative z-10">Web Sitesi</h4>
+                        <p className="text-[10px] text-admin-text-muted mb-3 relative z-10">Müşteri tarafını görüntüle</p>
+                        <button onClick={() => window.open('/', '_blank')} className="w-full bg-white/5 border border-white/10 text-white py-2 rounded-lg text-xs font-bold hover:bg-brand-cyan hover:border-transparent transition relative z-10">
+                            Siteye Git
                         </button>
                     </div>
-                    <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-3 mt-4 text-gray-500 hover:text-red-500 text-sm font-medium transition">
-                        <LogOut className="w-4 h-4" /> <span>Logout</span>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-3 mt-4 text-admin-text-muted hover:text-red-500 rounded-xl text-sm font-bold transition">
+                        <LogOut className="w-4 h-4" /> <span>Çıkış Yap</span>
                     </button>
                 </div>
             </aside>
 
             {/* MAIN CONTENT AREA */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* HEADER */}
-                <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 shadow-sm z-10">
-                    <div className="flex items-center flex-1 gap-8">
-                        <h2 className="text-xl font-bold text-gray-800">
-                            {window.location.pathname.includes('settings') ? 'Settings' : 'Dashboard'}
-                            <span className="text-gray-400 text-sm font-medium ml-2 font-mono">Control panel</span>
-                        </h2>
+            <main className="flex-1 flex flex-col h-full overflow-hidden bg-admin-dark relative">
+                {/* Gradient Background Effect */}
+                <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-brand-cyan/5 to-transparent pointer-events-none" />
 
-                        <div className="relative group hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="bg-gray-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm w-64 focus:ring-2 focus:ring-indigo-100 focus:bg-white transition-all outline-none"
-                            />
-                        </div>
+                {/* HEADER */}
+                <header className="h-24 flex items-center justify-between px-10 z-10">
+                    <div>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">
+                            {location.pathname.includes('orders') ? 'Sipariş Yönetimi' : 'Yönetim Paneli'}
+                        </h2>
+                        <p className="text-admin-text-muted text-xs font-bold tracking-widest mt-1">
+                            HOŞGELDİNİZ, YÖNETİCİ
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-5">
-                        <button className="relative w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-50 transition text-gray-500">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
-                        <div className="flex items-center gap-3 pl-5 border-l border-gray-100">
-                            <div className="text-right hidden md:block">
-                                <div className="text-sm font-bold text-gray-900">Admin User</div>
-                                <div className="text-xs text-gray-400">Super Admin</div>
+                    <div className="flex items-center gap-6">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition" />
+                            <input
+                                type="text"
+                                placeholder="Ara..."
+                                className="bg-admin-card border border-admin-border rounded-xl py-3 pl-12 pr-4 text-sm w-72 text-white focus:border-brand-cyan transition-all outline-none"
+                            />
+                        </div>
+
+                        <div className="h-8 w-px bg-admin-border"></div>
+
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="text-right hidden md:block">
+                                    <div className="text-sm font-bold text-white">Admin</div>
+                                    <div className="text-[10px] text-brand-cyan font-bold tracking-widest uppercase">System Admin</div>
+                                </div>
+                                <div className="w-12 h-12 bg-gradient-to-br from-brand-orange to-red-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-orange/20">
+                                    <User className="w-6 h-6" />
+                                </div>
                             </div>
-                            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 border border-indigo-200">
-                                <User className="w-5 h-5" />
-                            </div>
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
                         </div>
                     </div>
                 </header>
 
                 {/* PAGE CONTENT */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-10 custom-scrollbar z-10">
                     <Outlet />
                 </div>
             </main>

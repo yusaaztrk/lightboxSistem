@@ -26,6 +26,7 @@ export interface ConfigOptions {
   backplate: BackplateType;
   title: string;
   userImageUrl?: string | null;
+  backImageUrl?: string | null;
   viewMode: 'finish' | 'technical';
   isLightOn?: boolean;
   hasFeet?: boolean;
@@ -128,6 +129,7 @@ export interface BackingCost {
   materialType: string;
   displayName: string;
   pricePerM2: number;
+  ledSpacingCm?: number | null;
 }
 // Renaming existing adapterPrices in PricingFactors might be confusing, but here we define the model
 export interface AdapterPrice {

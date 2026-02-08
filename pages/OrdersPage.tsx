@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Order } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Search } from 'lucide-react';
+import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Search, ShoppingCart, DollarSign, Calendar, ChevronRight } from 'lucide-react';
 
 const OrdersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -40,154 +40,169 @@ const OrdersPage: React.FC = () => {
         pending: orders.filter(o => o.status === 'Pending' || !o.status).length
     };
 
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            case 'Approved': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'Pending': return 'bg-amber-100 text-amber-700 border-amber-200';
+            case 'Cancelled': return 'bg-red-100 text-red-700 border-red-200';
+            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'Completed': return 'Tamamlandı';
+            case 'Approved': return 'Onaylandı';
+            case 'Pending': return 'Beklemede';
+            case 'Cancelled': return 'İptal Edildi';
+            default: return status;
+        }
+    }
+
     return (
-        <div className="min-h-screen bg-[#050507] text-gray-200 font-sans p-6 md:p-10">
-            <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition"
-                        >
-                            <ChevronLeft className="w-5 h-5 text-gray-400" />
-                        </button>
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic">SİPARİŞLERİM</h1>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">SİPARİŞ GEÇMİŞİ VE DETAYLARI</p>
-                        </div>
+
+        <div className="space-y-8">
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-admin-card border border-admin-border p-6 rounded-3xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
+                        <Package className="w-24 h-24 text-brand-cyan" />
+                    </div>
+                    <span className="text-[10px] font-black text-brand-cyan uppercase tracking-widest block mb-2">TOPLAM SİPARİŞ</span>
+                    <span className="text-4xl font-black text-white tracking-tighter">{stats.total}</span>
+                </div>
+
+                <div className="bg-admin-card border border-admin-border p-6 rounded-3xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
+                        <Clock className="w-24 h-24 text-brand-orange" />
+                    </div>
+                    <span className="text-[10px] font-black text-brand-orange uppercase tracking-widest block mb-2">BEKLEYEN</span>
+                    <span className="text-4xl font-black text-white tracking-tighter">{stats.pending}</span>
+                    <div className="mt-2 text-[10px] font-bold text-admin-text-muted">İşlem bekleniyor</div>
+                </div>
+
+                <div className="bg-admin-card border border-admin-border p-6 rounded-3xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
+                        <CheckCircle className="w-24 h-24 text-brand-cyan" />
+                    </div>
+                    <span className="text-[10px] font-black text-brand-cyan uppercase tracking-widest block mb-2">TAMAMLANAN</span>
+                    <span className="text-4xl font-black text-white tracking-tighter">{stats.completed}</span>
+                    <div className="mt-2 text-[10px] font-bold text-admin-text-muted">Bu hafta</div>
+                </div>
+
+                <div className="bg-brand-cyan text-white p-6 rounded-3xl relative overflow-hidden shadow-lg shadow-brand-cyan/20">
+                    <div className="absolute top-0 right-0 p-4 opacity-20">
+                        <DollarSign className="w-24 h-24 text-white" />
+                    </div>
+                    <span className="text-[10px] font-black text-white/80 uppercase tracking-widest block mb-2">TOPLAM KAZANÇ</span>
+                    <span className="text-4xl font-black text-white tracking-tighter">${orders.reduce((acc, curr) => acc + (curr.price || 0), 0).toFixed(0)}</span>
+                </div>
+            </div>
+
+            {/* Main Orders Table */}
+            <div className="bg-admin-card rounded-3xl border border-admin-border overflow-hidden shadow-2xl">
+                <div className="p-8 border-b border-admin-border flex justify-between items-center bg-white/5">
+                    <h3 className="font-black text-xl text-white uppercase tracking-tight italic">Son Siparişler</h3>
+                    <div className="flex gap-2">
+                        {['All', 'Pending', 'Completed', 'Cancelled'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition ${activeTab === tab ? 'bg-brand-cyan text-white shadow-lg shadow-brand-cyan/20' : 'bg-white/5 text-admin-text-muted hover:bg-white/10 hover:text-white'}`}
+                            >
+                                {tab === 'All' ? 'Tümü' : tab === 'Pending' ? 'Bekleyen' : tab === 'Completed' ? 'Tamamlanan' : 'İptal'}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Dashboard Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Package className="w-24 h-24 text-indigo-500" />
-                        </div>
-                        <span className="text-xs font-black text-indigo-400 uppercase tracking-widest block mb-2">TOPLAM SİPARİŞ</span>
-                        <span className="text-4xl font-black text-white tracking-tighter">{stats.total}</span>
-                    </div>
-                    <div className="bg-emerald-600/10 border border-emerald-500/20 p-6 rounded-3xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <CheckCircle className="w-24 h-24 text-emerald-500" />
-                        </div>
-                        <span className="text-xs font-black text-emerald-400 uppercase tracking-widest block mb-2">TAMAMLANAN</span>
-                        <span className="text-4xl font-black text-white tracking-tighter">{stats.completed}</span>
-                    </div>
-                    <div className="bg-orange-600/10 border border-orange-500/20 p-6 rounded-3xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Clock className="w-24 h-24 text-orange-500" />
-                        </div>
-                        <span className="text-xs font-black text-orange-400 uppercase tracking-widest block mb-2">BEKLEYEN</span>
-                        <span className="text-4xl font-black text-white tracking-tighter">{stats.pending}</span>
-                    </div>
-                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-black/20">
+                            <tr>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-admin-text-muted uppercase tracking-widest">ID</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Müşteri</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Boyutlar</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Fiyat</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Tarih</th>
+                                <th className="px-8 py-5 text-left text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Durum</th>
+                                <th className="px-8 py-5 text-right text-[10px] font-black text-admin-text-muted uppercase tracking-widest">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-admin-border">
+                            {filteredOrders.map((order) => {
+                                let dims = "-";
+                                try {
+                                    const c = JSON.parse(order.configurationDetails || '{}');
+                                    if (c.width && c.height) dims = `${c.width}x${c.height} cm`;
+                                } catch (e) { /* ignore parse error */ }
 
-                {/* Orders List */}
-                <div className="bg-[#0a0a0c] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                    <div className="p-8 border-b border-white/5 flex flex-col gap-6">
-                        <div className="flex flex-col md:flex-row gap-6 justify-between items-center">
-                            <h2 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
-                                <Package className="w-5 h-5 text-indigo-500" /> SİPARİŞ LİSTESİ
-                            </h2>
-                            <div className="relative group w-full md:w-auto">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Sipariş Ara..."
-                                    className="w-full md:w-80 bg-black/20 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-gray-300 focus:outline-none focus:border-indigo-500/50 focus:bg-indigo-500/5 transition-all placeholder:text-gray-700"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Tabs */}
-                        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                            {[
-                                { id: 'All', label: 'TÜMÜ' },
-                                { id: 'Pending', label: 'BEKLEYEN' },
-                                { id: 'Completed', label: 'ONAYLANAN' },
-                                { id: 'Shipped', label: 'KARGOLANAN' },
-                                { id: 'Cancelled', label: 'İPTAL EDİLEN' }
-                            ].map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === tab.id
-                                        ? 'bg-white text-black shadow-lg scale-105'
-                                        : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white'
-                                        }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-white/[0.02] border-b border-white/5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                    <th className="px-8 py-5">SİPARİŞ ID</th>
-                                    <th className="px-8 py-5">MÜŞTERİ</th>
-                                    <th className="px-8 py-5">BOYUTLAR</th>
-                                    <th className="px-8 py-5">TUTAR</th>
-                                    <th className="px-8 py-5">TARİH</th>
-                                    <th className="px-8 py-5 text-center">DURUM</th>
-                                    <th className="px-8 py-5 text-right">İŞLEMLER</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {filteredOrders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-8 py-5 font-mono text-xs text-gray-400">#{order.id.toString().padStart(6, '0')}</td>
+                                return (
+                                    <tr key={order.id} className="hover:bg-white/5 transition-colors group cursor-pointer" onClick={() => navigate(`/admin/orders/${order.id}`)}>
                                         <td className="px-8 py-5">
-                                            <div className="font-bold text-white text-sm">{order.customerName || 'Misafir'}</div>
-                                            <div className="text-[10px] text-gray-600 font-bold">{order.customerEmail || '-'}</div>
+                                            <span className="font-mono text-xs font-bold text-admin-text-muted">#{order.id.toString().padStart(6, '0')}</span>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-gray-300">
-                                                {order.dimensions}
-                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-cyan to-blue-600 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-brand-cyan/20">
+                                                    {order.customerName ? order.customerName.substring(0, 1).toUpperCase() : 'M'}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-white text-sm">{order.customerName || 'Misafir'}</div>
+                                                    <div className="text-[10px] text-admin-text-muted font-mono">{order.customerEmail || '-'}</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td className="px-8 py-5 font-black text-indigo-400 tracking-tight">${order.price.toLocaleString()}</td>
-                                        <td className="px-8 py-5 text-xs text-gray-500 font-bold">
-                                            {new Date(order.createdAt).toLocaleDateString()}
+                                        <td className="px-8 py-5">
+                                            <div className="text-sm font-bold text-white font-mono">{order.dimensions || dims}</div>
                                         </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${order.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                                order.status === 'Shipped' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                    order.status === 'Cancelled' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                                        'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                                                }`}>
-                                                {order.status === 'Completed' ? 'ONAYLANDI' :
-                                                    order.status === 'Shipped' ? 'KARGOLANDI' :
-                                                        order.status === 'Cancelled' ? 'İPTAL EDİLDİ' : 'BEKLİYOR'}
-                                            </span>
+                                        <td className="px-8 py-5">
+                                            <div className="font-black text-brand-orange text-lg">
+                                                ${order.price?.toFixed(0)}
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <div className="flex items-center gap-2 text-admin-text-muted text-xs font-mono">
+                                                {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            {order.status === 'Completed' || order.status === 'Shipped' ? (
+                                                <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-brand-cyan/10 text-brand-cyan uppercase tracking-wider border border-brand-cyan/20">
+                                                    {getStatusText(order.status)}
+                                                </span>
+                                            ) : order.status === 'Cancelled' ? (
+                                                <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-red-500/10 text-red-500 uppercase tracking-wider border border-red-500/20">
+                                                    {getStatusText(order.status)}
+                                                </span>
+                                            ) : (
+                                                <span className="px-3 py-1 rounded-lg text-[10px] font-black bg-brand-orange/10 text-brand-orange uppercase tracking-wider border border-brand-orange/20">
+                                                    {getStatusText(order.status || 'Pending')}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-8 py-5 text-right">
-                                            <button
-                                                onClick={() => navigate(`/admin/orders/${order.id}`)}
-                                                className="text-indigo-600 hover:text-indigo-800 font-bold text-xs uppercase tracking-wider border border-indigo-100 bg-indigo-50 px-3 py-1.5 rounded-lg transition"
-                                            >
-                                                DETAY
+                                            <button className="p-2 bg-white/5 rounded-lg text-admin-text-muted group-hover:text-white group-hover:bg-brand-cyan transition">
+                                                <ChevronRight className="w-4 h-4" />
                                             </button>
                                         </td>
                                     </tr>
-                                ))}
-                                {filteredOrders.length === 0 && !loading && (
-                                    <tr>
-                                        <td colSpan={7} className="px-8 py-16 text-center text-gray-600 text-sm font-bold uppercase tracking-widest">
-                                            {activeTab === 'All' ? 'HENÜZ SİPARİŞ BULUNMUYOR' : 'BU KATEGORİDE SİPARİŞ YOK'}
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                );
+                            })}
+                            {filteredOrders.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-8 py-24 text-center text-admin-text-muted text-sm font-black uppercase tracking-widest opacity-50">
+                                        SİPARİŞ BULUNMUYOR
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
     );
 };
 

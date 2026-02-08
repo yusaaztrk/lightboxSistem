@@ -18,6 +18,13 @@ public class SpinWheelController : ControllerBase
         _context = context;
     }
 
+    private static string NormalizePhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return string.Empty;
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        return digits;
+    }
+
     // --- CONFIGURATION ---
 
     [HttpGet("config")]
@@ -74,11 +81,12 @@ public class SpinWheelController : ControllerBase
     [HttpPost("spin")]
     public async Task<IActionResult> Spin([FromBody] SpinRequest request)
     {
-        if (string.IsNullOrEmpty(request.PhoneNumber))
+        var phone = NormalizePhone(request.PhoneNumber);
+        if (string.IsNullOrEmpty(phone))
             return BadRequest("Telefon numarası gereklidir.");
 
         // Check for existing participation
-        if (await _context.Leads.AnyAsync(l => l.PhoneNumber == request.PhoneNumber))
+        if (await _context.Leads.AnyAsync(l => l.PhoneNumber == phone))
         {
             return BadRequest("Bu numara ile daha önce katılım sağlanmış!");
         }
@@ -116,7 +124,7 @@ public class SpinWheelController : ControllerBase
         // 4. Save Lead
         var lead = new CustomerLead
         {
-            PhoneNumber = request.PhoneNumber,
+            PhoneNumber = phone,
             WonPrizeLabel = wonItem.Label,
             DiscountCode = code,
             DiscountPercentage = (!wonItem.IsLoss && wonItem.DiscountPercentage > 0) ? wonItem.DiscountPercentage : 0,
@@ -146,13 +154,16 @@ public class SpinWheelController : ControllerBase
         if (string.IsNullOrEmpty(request.Code)) return BadRequest("Kod boş olamaz.");
         if (string.IsNullOrEmpty(request.PhoneNumber)) return BadRequest("Telefon numarası gereklidir.");
 
+        var phone = NormalizePhone(request.PhoneNumber);
+        if (string.IsNullOrEmpty(phone)) return BadRequest("Telefon numarası gereklidir.");
+
         var lead = await _context.Leads.FirstOrDefaultAsync(l => l.DiscountCode == request.Code && !l.IsUsed);
         
         if (lead == null)
             return BadRequest("Geçersiz veya kullanılmış kod.");
 
         // Normalize phones for comparison (strip spaces etc if needed, but for now exact match)
-        if (lead.PhoneNumber != request.PhoneNumber)
+        if (NormalizePhone(lead.PhoneNumber) != phone)
             return BadRequest("Bu kod başka bir numaraya tanımlıdır.");
         
         return Ok(new { percentage = lead.DiscountPercentage, owner = lead.PhoneNumber });

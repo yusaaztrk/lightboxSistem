@@ -1,14 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Order, CalculationBreakdown, ConfigOptions } from '../types';
-import { ArrowLeft, User, Phone, Calendar, Ruler, CheckCircle, Package, Receipt, Info } from 'lucide-react';
+import { Order, CalculationBreakdown, ConfigOptions, LedLayoutResult } from '../types';
+import { generateProductionPdf } from '../services/pdfGenerator';
+import { ArrowLeft, User, Phone, Calendar, Ruler, CheckCircle, Package, Receipt, Info, Printer } from 'lucide-react';
 
 const OrderDetailsPage: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [layoutMode, setLayoutMode] = useState<'AUTO' | 'Horizontal' | 'Vertical'>('AUTO');
+
+    const pickLayoutForPdf = (b: CalculationBreakdown): LedLayoutResult | null => {
+        if (layoutMode === 'AUTO') return b.selectedLayout;
+        if (b.selectedLayout?.direction === layoutMode) return b.selectedLayout;
+        if (b.alternativeLayout?.direction === layoutMode) return b.alternativeLayout;
+        return b.selectedLayout;
+    };
+
+    const selectAdapterForLayout = async (totalLedMeters: number) => {
+        const [settings, adapters] = await Promise.all([
+            api.getSystemSettings(),
+            api.getAdapterPrices()
+        ]);
+
+        const totalAmperes = totalLedMeters * (settings.amperesPerMeter || 1);
+        const safetyAmperes = totalAmperes * 1.2;
+
+        const sorted = (adapters || []).slice().sort((a, b) => a.amperage - b.amperage);
+        let selected = sorted.find(a => a.amperage >= safetyAmperes) || null;
+        if (!selected && sorted.length > 0) selected = sorted[sorted.length - 1];
+
+        return {
+            adapterName: selected?.name || '-',
+            requiredAmperes: totalAmperes,
+            selectedAmperes: selected?.amperage || 0
+        };
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -54,36 +84,81 @@ const OrderDetailsPage: React.FC = () => {
         }
     };
 
+
+
+    const handleDownloadPdf = async () => {
+        if (!order || !breakdown || !config) return;
+        setIsGeneratingPdf(true);
+        try {
+            const chosenLayout = pickLayoutForPdf(breakdown);
+            const adapterInfo = chosenLayout
+                ? await selectAdapterForLayout(chosenLayout.totalLedMeters || 0)
+                : { adapterName: breakdown.adapterName, requiredAmperes: breakdown.requiredAmperes, selectedAmperes: breakdown.selectedAmperes };
+
+            await generateProductionPdf(order, breakdown, config, {
+                layoutOverride: chosenLayout,
+                adapterNameOverride: adapterInfo.adapterName,
+                requiredAmperesOverride: adapterInfo.requiredAmperes,
+                selectedAmperesOverride: adapterInfo.selectedAmperes
+            });
+        } catch (e) {
+            console.error("PDF Generation Error:", e);
+            alert("PDF oluşturulurken bir hata oluştu.");
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
     return (
         <div className="space-y-8 pb-20">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate('/admin/orders')} className="p-3 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition text-gray-400 hover:text-indigo-600">
+                    <button onClick={() => navigate('/admin/orders')} className="p-3 bg-admin-card border border-admin-border rounded-xl hover:bg-white/5 transition text-admin-text-muted hover:text-white">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Sipariş #{order.id}</h1>
-                        <p className="text-sm text-gray-500 font-medium">Detaylı maliyet ve yapılandırma bilgisi</p>
+                        <h1 className="text-2xl font-black text-white italic tracking-tighter uppercase">Sipariş #{order.id}</h1>
+                        <p className="text-xs text-admin-text-muted font-bold tracking-widest">DETAYLI MALİYET VE YAPILANDIRMA</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <span className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest ${order.status === 'Completed' ? 'bg-emerald-100 text-emerald-600' :
-                        order.status === 'Shipped' ? 'bg-blue-100 text-blue-600' :
-                            order.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
-                                'bg-yellow-100 text-yellow-600'
+                    <select
+                        value={layoutMode}
+                        onChange={(e) => setLayoutMode(e.target.value as any)}
+                        className="px-4 py-3 rounded-xl bg-admin-card border border-admin-border text-white text-xs font-black uppercase tracking-widest outline-none"
+                    >
+                        <option value="AUTO">OTOMATİK (UCUZ)</option>
+                        <option value="Horizontal">YATAY</option>
+                        <option value="Vertical">DİKEY</option>
+                    </select>
+
+                    <button
+                        onClick={handleDownloadPdf}
+                        disabled={isGeneratingPdf}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-white text-xs font-black uppercase tracking-widest transition shadow-lg ${isGeneratingPdf ? 'bg-gray-600 cursor-not-allowed' : 'bg-brand-cyan hover:bg-brand-cyan-hover shadow-brand-cyan/20'
+                            }`}
+                    >
+                        <Printer className="w-4 h-4" />
+                        {isGeneratingPdf ? 'PDF HAZIRLANIYOR...' : 'ÜRETİM PDF'}
+                    </button>
+
+                    <span className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest ${order.status === 'Completed' ? 'bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20' :
+                        order.status === 'Shipped' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
+                            order.status === 'Cancelled' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                'bg-brand-orange/10 text-brand-orange border border-brand-orange/20'
                         }`}>
                         {order.status === 'Pending' ? 'Bekliyor' :
                             order.status === 'Completed' ? 'Onaylandı' :
                                 order.status === 'Shipped' ? 'Kargolandı' : 'İptal'}
                     </span>
 
-                    <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-2 bg-admin-card p-1 rounded-xl border border-admin-border">
                         {order.status !== 'Completed' && order.status !== 'Shipped' && (
                             <button
                                 onClick={() => handleStatusUpdate('Completed')}
-                                className="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-bold hover:bg-emerald-100 transition"
+                                className="px-4 py-2 rounded-lg bg-brand-cyan/10 text-brand-cyan text-xs font-black hover:bg-brand-cyan/20 transition uppercase"
                             >
                                 ONAYLA
                             </button>
@@ -91,14 +166,14 @@ const OrderDetailsPage: React.FC = () => {
                         {order.status === 'Completed' && (
                             <button
                                 onClick={() => handleStatusUpdate('Shipped')}
-                                className="px-4 py-2 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition"
+                                className="px-4 py-2 rounded-lg bg-blue-500/10 text-blue-500 text-xs font-black hover:bg-blue-500/20 transition uppercase"
                             >
                                 KARGOLA
                             </button>
                         )}
                         <button
                             onClick={handleDelete}
-                            className="px-4 py-2 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition"
+                            className="px-4 py-2 rounded-lg bg-red-500/10 text-red-500 text-xs font-black hover:bg-red-500/20 transition uppercase"
                         >
                             SİL
                         </button>
@@ -110,61 +185,61 @@ const OrderDetailsPage: React.FC = () => {
                 {/* Left Column: Customer & Config */}
                 <div className="space-y-8">
                     {/* Customer Info */}
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                            <User className="w-4 h-4" /> Müşteri Bilgileri
+                    <div className="bg-admin-card rounded-3xl p-8 shadow-2xl border border-admin-border">
+                        <h3 className="text-xs font-black text-brand-orange uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            Müşteri Bilgileri
                         </h3>
                         <div className="space-y-4">
-                            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
-                                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-lg">
+                            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <div className="w-12 h-12 bg-gradient-to-br from-brand-cyan to-blue-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg">
                                     {order.customerName?.charAt(0)}
                                 </div>
-                                <div>
-                                    <div className="text-sm font-bold text-gray-900">{order.customerName}</div>
-                                    <div className="text-xs text-gray-500 font-medium">Müşteri</div>
+                                <div className='overflow-hidden'>
+                                    <div className="text-sm font-black text-white truncate">{order.customerName}</div>
+                                    <div className="text-xs text-admin-text-muted font-bold tracking-wider">MÜŞTERİ</div>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-gray-50 rounded-2xl">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase mb-1">Telefon</div>
-                                    <div className="text-sm font-bold text-gray-900 font-mono">{order.customerPhone}</div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div className="text-[10px] font-black text-admin-text-muted uppercase mb-1">Telefon</div>
+                                    <div className="text-xs font-bold text-white font-mono truncate" title={order.customerPhone}>{order.customerPhone}</div>
                                 </div>
-                                <div className="p-4 bg-gray-50 rounded-2xl">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase mb-1">Tarih</div>
-                                    <div className="text-sm font-bold text-gray-900">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div className="text-[10px] font-black text-admin-text-muted uppercase mb-1">Tarih</div>
+                                    <div className="text-xs font-bold text-white">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Configuration Summary */}
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                            <Package className="w-4 h-4" /> Ürün Özellikleri
+                    <div className="bg-admin-card rounded-3xl p-8 shadow-2xl border border-admin-border">
+                        <h3 className="text-xs font-black text-brand-cyan uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            Ürün Özellikleri
                         </h3>
                         {config && (
                             <div className="space-y-3">
-                                <div className="flex justify-between p-3 border-b border-gray-50">
-                                    <span className="text-sm text-gray-500 font-medium">Boyutlar</span>
-                                    <span className="text-sm font-bold text-gray-900">{config.width}x{config.height} cm</span>
+                                <div className="flex justify-between p-3 border-b border-white/5">
+                                    <span className="text-sm text-admin-text-muted font-bold">Boyutlar</span>
+                                    <span className="text-sm font-black text-white font-mono">{config.width}x{config.height} cm</span>
                                 </div>
-                                <div className="flex justify-between p-3 border-b border-gray-50">
-                                    <span className="text-sm text-gray-500 font-medium">Derinlik</span>
-                                    <span className="text-sm font-bold text-gray-900">{config.depth} cm ({config.profile === 'DOUBLE' ? 'Çift' : 'Tek'} Yön)</span>
+                                <div className="flex justify-between p-3 border-b border-white/5">
+                                    <span className="text-sm text-admin-text-muted font-bold">Derinlik</span>
+                                    <span className="text-sm font-bold text-white">{config.depth} cm ({config.profile === 'DOUBLE' ? 'Çift' : 'Tek'} Yön)</span>
                                 </div>
-                                <div className="flex justify-between p-3 border-b border-gray-50">
-                                    <span className="text-sm text-gray-500 font-medium">Profil Rengi</span>
+                                <div className="flex justify-between p-3 border-b border-white/5">
+                                    <span className="text-sm text-admin-text-muted font-bold">Profil Rengi</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: config.frameColor }} />
+                                        <div className="w-5 h-5 rounded-md border border-white/20 shadow-sm" style={{ backgroundColor: config.frameColor }} />
                                     </div>
                                 </div>
-                                <div className="flex justify-between p-3 border-b border-gray-50">
-                                    <span className="text-sm text-gray-500 font-medium">Aydınlatma</span>
-                                    <span className="text-sm font-bold text-gray-900">{config.isLightOn ? 'Var' : 'Yok'} ({config.ledType === 'INNER' ? 'İç Mekan' : 'Dış Mekan'})</span>
+                                <div className="flex justify-between p-3 border-b border-white/5">
+                                    <span className="text-sm text-admin-text-muted font-bold">Aydınlatma</span>
+                                    <span className="text-sm font-bold text-white">{config.isLightOn ? 'Var' : 'Yok'} ({config.ledType === 'INNER' ? 'İç' : 'Dış'})</span>
                                 </div>
                                 <div className="flex justify-between p-3">
-                                    <span className="text-sm text-gray-500 font-medium">Arkalık</span>
-                                    <span className="text-sm font-bold text-gray-900">{config.backplate}</span>
+                                    <span className="text-sm text-admin-text-muted font-bold">Arkalık</span>
+                                    <span className="text-sm font-bold text-white">{config.backplate}</span>
                                 </div>
                             </div>
                         )}
@@ -173,15 +248,38 @@ const OrderDetailsPage: React.FC = () => {
 
                 {/* Middle & Right: BOM & Details */}
                 <div className="lg:col-span-2 space-y-8">
+                    {/* Images */}
+                    {config && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-admin-card rounded-3xl p-6 shadow-2xl border border-admin-border">
+                                <div className="text-[10px] font-black text-admin-text-muted uppercase tracking-widest mb-4">ÖN YÜZ GÖRSELİ</div>
+                                {(config as any).userImageUrl ? (
+                                    <img src={(config as any).userImageUrl} className="w-full h-64 object-contain bg-black/20 rounded-2xl border border-white/5" />
+                                ) : (
+                                    <div className="w-full h-64 flex items-center justify-center bg-black/20 rounded-2xl border border-white/5 text-admin-text-muted font-bold">Görsel yok</div>
+                                )}
+                            </div>
+
+                            <div className="bg-admin-card rounded-3xl p-6 shadow-2xl border border-admin-border">
+                                <div className="text-[10px] font-black text-admin-text-muted uppercase tracking-widest mb-4">ARKA YÜZ GÖRSELİ</div>
+                                {(config as any).backImageUrl ? (
+                                    <img src={(config as any).backImageUrl} className="w-full h-64 object-contain bg-black/20 rounded-2xl border border-white/5" />
+                                ) : (
+                                    <div className="w-full h-64 flex items-center justify-center bg-black/20 rounded-2xl border border-white/5 text-admin-text-muted font-bold">Görsel yok</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Cost Breakdown Table */}
-                    <div className="bg-[#121214] text-white rounded-3xl p-8 shadow-2xl">
+                    <div className="bg-[#0f0f10] text-white rounded-3xl p-8 shadow-2xl border border-admin-border">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-base font-black text-white uppercase tracking-widest flex items-center gap-3">
-                                <Receipt className="w-5 h-6 text-indigo-500" /> Maliyet Analizi
+                                <Receipt className="w-5 h-6 text-brand-orange" /> Maliyet Analizi
                             </h3>
                             <div className="text-right">
-                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">TOPLAM TUTAR</div>
-                                <div className="text-3xl font-black text-indigo-400 tracking-tighter">${order.price.toFixed(2)}</div>
+                                <div className="text-[10px] text-admin-text-muted font-black uppercase tracking-widest">TOPLAM TUTAR</div>
+                                <div className="text-4xl font-black text-brand-cyan tracking-tighter">${order.price.toFixed(2)}</div>
                             </div>
                         </div>
 
@@ -189,14 +287,14 @@ const OrderDetailsPage: React.FC = () => {
                             <div className="space-y-6">
                                 {/* Raw Materials Section */}
                                 <div>
-                                    <div className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-4 border-b border-white/10 pb-2">Ham Maliyetler (BOM)</div>
+                                    <div className="text-[10px] font-black text-brand-cyan uppercase tracking-widest mb-4 border-b border-white/10 pb-2">Ham Maliyetler (BOM)</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                                         {/* Profile */}
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-gray-400 text-xs font-bold uppercase">Profil ({(breakdown.perimeter ?? 0).toFixed(2)}m)</span>
-                                                <span className="font-mono font-bold">${(breakdown.profileCost ?? 0).toFixed(2)}</span>
+                                                <span className="text-admin-text-muted text-xs font-bold uppercase">Profil ({(breakdown.perimeter ?? 0).toFixed(2)}m)</span>
+                                                <span className="font-mono font-bold text-white">${(breakdown.profileCost ?? 0).toFixed(2)}</span>
                                             </div>
                                             <div className="text-[10px] text-gray-500">Birim: ${(breakdown.profileCost && breakdown.perimeter ? (breakdown.profileCost / breakdown.perimeter).toFixed(2) : '0.00')} / metre</div>
                                         </div>
@@ -204,8 +302,8 @@ const OrderDetailsPage: React.FC = () => {
                                         {/* Backing */}
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-gray-400 text-xs font-bold uppercase">Zemin ({(breakdown.areaM2 ?? 0).toFixed(2)}m²)</span>
-                                                <span className="font-mono font-bold">${(breakdown.backingCost ?? 0).toFixed(2)}</span>
+                                                <span className="text-admin-text-muted text-xs font-bold uppercase">Zemin ({(breakdown.areaM2 ?? 0).toFixed(2)}m²)</span>
+                                                <span className="font-mono font-bold text-white">${(breakdown.backingCost ?? 0).toFixed(2)}</span>
                                             </div>
                                             <div className="text-[10px] text-gray-500">Malzeme: {config?.backplate || '-'}</div>
                                         </div>
@@ -213,8 +311,8 @@ const OrderDetailsPage: React.FC = () => {
                                         {/* LED */}
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-gray-400 text-xs font-bold uppercase">LED Aydınlatma</span>
-                                                <span className="font-mono font-bold">${(breakdown.ledCost ?? 0).toFixed(2)}</span>
+                                                <span className="text-admin-text-muted text-xs font-bold uppercase">LED Aydınlatma</span>
+                                                <span className="font-mono font-bold text-white">${(breakdown.ledCost ?? 0).toFixed(2)}</span>
                                             </div>
                                             <div className="text-[10px] text-gray-500">
                                                 Tip: {config?.ledType || '-'} <br />
@@ -225,8 +323,8 @@ const OrderDetailsPage: React.FC = () => {
                                         {/* Adapter */}
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-gray-400 text-xs font-bold uppercase">Adaptör</span>
-                                                <span className="font-mono font-bold">${(breakdown.adapterCost ?? 0).toFixed(2)}</span>
+                                                <span className="text-admin-text-muted text-xs font-bold uppercase">Adaptör</span>
+                                                <span className="font-mono font-bold text-white">${(breakdown.adapterCost ?? 0).toFixed(2)}</span>
                                             </div>
                                             <div className="text-[10px] text-gray-500">
                                                 {breakdown.adapterName || '-'} <br />
@@ -237,8 +335,8 @@ const OrderDetailsPage: React.FC = () => {
                                         {/* Print */}
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-gray-400 text-xs font-bold uppercase">UV Baskı</span>
-                                                <span className="font-mono font-bold">${(breakdown.printCost ?? 0).toFixed(2)}</span>
+                                                <span className="text-admin-text-muted text-xs font-bold uppercase">UV Baskı</span>
+                                                <span className="font-mono font-bold text-white">${(breakdown.printCost ?? 0).toFixed(2)}</span>
                                             </div>
                                             <div className="text-[10px] text-gray-500">Alan: {(breakdown.areaM2 ?? 0).toFixed(2)}m²</div>
                                         </div>
@@ -246,27 +344,27 @@ const OrderDetailsPage: React.FC = () => {
                                         {/* Other */}
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-gray-400 text-xs font-bold uppercase">Diğer (Kablo, Köşe)</span>
-                                                <span className="font-mono font-bold">${((breakdown.cableCost ?? 0) + (breakdown.cornerPieceCost ?? 0)).toFixed(2)}</span>
+                                                <span className="text-admin-text-muted text-xs font-bold uppercase">Diğer (Kablo, Köşe)</span>
+                                                <span className="font-mono font-bold text-white">${((breakdown.cableCost ?? 0) + (breakdown.cornerPieceCost ?? 0)).toFixed(2)}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 flex justify-between px-4 py-3 bg-indigo-900/20 rounded-xl border border-indigo-500/20">
-                                        <span className="text-indigo-300 text-xs font-black uppercase tracking-widest">Ham Toplam</span>
-                                        <span className="text-indigo-300 font-mono font-bold text-lg">${(breakdown.rawMaterialTotal ?? 0).toFixed(2)}</span>
+                                    <div className="mt-4 flex justify-between px-6 py-4 bg-brand-cyan/5 rounded-xl border border-brand-cyan/20">
+                                        <span className="text-brand-cyan text-xs font-black uppercase tracking-widest">Ham Toplam (BOM)</span>
+                                        <span className="text-brand-cyan font-mono font-bold text-lg">${(breakdown.rawMaterialTotal ?? 0).toFixed(2)}</span>
                                     </div>
                                 </div>
 
                                 {/* Labor & Profit */}
                                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/10">
-                                    <div className="p-4 rounded-2xl border border-orange-500/20 bg-orange-500/10">
-                                        <div className="text-orange-400 text-[10px] font-black uppercase tracking-widest mb-1">İşçilik</div>
-                                        <div className="text-2xl font-mono font-bold text-orange-200">${(breakdown.laborCost ?? 0).toFixed(2)}</div>
+                                    <div className="p-4 rounded-2xl border border-brand-orange/20 bg-brand-orange/5">
+                                        <div className="text-brand-orange text-[10px] font-black uppercase tracking-widest mb-1">İşçilik</div>
+                                        <div className="text-2xl font-mono font-bold text-white">${(breakdown.laborCost ?? 0).toFixed(2)}</div>
                                     </div>
-                                    <div className="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
-                                        <div className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-1">Kâr Marjı</div>
-                                        <div className="text-2xl font-mono font-bold text-emerald-200">${(breakdown.profitMargin ?? 0).toFixed(2)}</div>
+                                    <div className="p-4 rounded-2xl border border-brand-cyan/20 bg-brand-cyan/5">
+                                        <div className="text-brand-cyan text-[10px] font-black uppercase tracking-widest mb-1">Kâr Marjı</div>
+                                        <div className="text-2xl font-mono font-bold text-white">${(breakdown.profitMargin ?? 0).toFixed(2)}</div>
                                     </div>
                                 </div>
                             </div>
@@ -277,11 +375,11 @@ const OrderDetailsPage: React.FC = () => {
 
                     {/* Additional Notes (if any in config) */}
                     {(config as any)?.note && (
-                        <div className="bg-yellow-50 border border-yellow-100 p-6 rounded-3xl">
-                            <h4 className="text-xs font-black text-yellow-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-6 rounded-3xl">
+                            <h4 className="text-xs font-black text-yellow-500 uppercase tracking-widest mb-2 flex items-center gap-2">
                                 <Info className="w-4 h-4" /> Müşteri Notu
                             </h4>
-                            <p className="text-sm text-yellow-800 font-medium">{(config as any).note}</p>
+                            <p className="text-sm text-yellow-100 font-medium">{(config as any).note}</p>
                         </div>
                     )}
                 </div>

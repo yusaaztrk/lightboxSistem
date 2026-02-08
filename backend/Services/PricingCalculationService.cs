@@ -72,9 +72,11 @@ public class PricingCalculationService
         var ledPrice = ledType == "INNER" 
             ? settings.LedIndoorPricePerMeter 
             : settings.LedOutdoorPricePerMeter;
+
+        var ledSpacingCm = backingCost.LedSpacingCm ?? settings.DefaultLedSpacingCm;
         
         var (optimal, alternative) = _ledOptimizer.CalculateOptimalLayout(
-            width, height, isDoubleSided, ledPrice);
+            width, height, isDoubleSided, ledPrice, ledSpacingCm);
         
         breakdown.SelectedLayout = optimal;
         breakdown.AlternativeLayout = alternative;

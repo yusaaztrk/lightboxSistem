@@ -9,11 +9,13 @@ export const DEFAULT_CONFIG: any = {
   sheetWidth: 300,
   sheetHeight: 200,
   depth: 8,
+  ledSpacing: 15,
   profile: ProfileType.SINGLE,
   ledType: 'INNER' as LedType,
   backplate: 'MDF_3MM' as BackplateType,
   title: "Yeni Proje",
   userImageUrl: null,
+  backImageUrl: null,
   viewMode: 'finish',
   isLightOn: true
 };

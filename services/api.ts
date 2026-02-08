@@ -12,6 +12,7 @@ interface SystemSettings {
   laborRatePercentage: number;
   profitMarginPercentage: number;
   amperesPerMeter: number;
+  defaultLedSpacingCm?: number;
   ledIndoorPricePerMeter: number;
   ledOutdoorPricePerMeter: number;
 }
@@ -92,7 +93,8 @@ export const api = {
       profile: config.profile,
       ledType: config.ledType,
       backplate: config.backplate,
-      profileId: config.profileId
+      profileId: config.profileId,
+      hasFeet: !!config.hasFeet
     };
     const response = await axios.post<CalculationBreakdown>(`${API_URL}/calculation`, payload);
     return response.data;
@@ -213,5 +215,10 @@ export const api = {
   },
   async deleteLead(id: number) {
     return axios.delete(`${API_URL}/spinwheel/lead/${id}`);
+  },
+
+  // Auth
+  async adminLogin(credentials: { username: string, password: string }) {
+    return axios.post(`${API_URL}/auth/admin-login`, credentials);
   }
 };

@@ -22,6 +22,9 @@ public class AppDbContext : DbContext
     // Membership
     public DbSet<MembershipType> MembershipTypes { get; set; }
     public DbSet<Member> Members { get; set; }
+    
+    // Admin Auth
+    public DbSet<AdminUser> AdminUsers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +35,7 @@ public class AppDbContext : DbContext
         { 
             Id = 1,
             AmperesPerMeter = 1.0m, // 50cm = 0.5A => 1m = 1.0A
+            DefaultLedSpacingCm = 15.0m,
             CableFixedCost = 6.00m,
             CornerPiecePrice = 0.70m,
             LedIndoorPricePerMeter = 2.00m, // (Adet 1$) * 2

@@ -99,6 +99,25 @@ namespace LightboxBackend.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LightboxBackend.Models.AdminUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AdminUsers");
+                });
+
             modelBuilder.Entity("LightboxBackend.Models.BackingCost", b =>
                 {
                     b.Property<int>("Id")
@@ -107,6 +126,9 @@ namespace LightboxBackend.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("LedSpacingCm")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("MaterialType")
@@ -443,6 +465,9 @@ namespace LightboxBackend.Migrations
                     b.Property<decimal>("CornerPiecePrice")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("DefaultLedSpacingCm")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("FabricProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
@@ -484,6 +509,7 @@ namespace LightboxBackend.Migrations
                             AmperesPerMeter = 1.0m,
                             CableFixedCost = 6.00m,
                             CornerPiecePrice = 0.70m,
+                            DefaultLedSpacingCm = 15.0m,
                             FabricProfitMarginPercentage = 30.0m,
                             LaborRatePercentage = 30.0m,
                             LedIndoorPricePerMeter = 2.00m,

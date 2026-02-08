@@ -74,7 +74,7 @@ const LedVisualization: React.FC<Props> = ({ config, layout, alternativeLayout }
                             x={containerSize / 2}
                             y={yPos + (spacing * scale / 2) + 3}
                             fontSize="8"
-                            fill="white"
+                            fill="currentColor"
                             textAnchor="middle"
                             opacity={0.6}
                         >
@@ -108,7 +108,7 @@ const LedVisualization: React.FC<Props> = ({ config, layout, alternativeLayout }
                             x={xPos + (spacing * scale / 2)}
                             y={containerSize / 2}
                             fontSize="8"
-                            fill="white"
+                            fill="currentColor"
                             textAnchor="middle"
                             opacity={0.6}
                         >
@@ -121,7 +121,7 @@ const LedVisualization: React.FC<Props> = ({ config, layout, alternativeLayout }
     }
 
     return (
-        <div className="flex flex-col items-center justify-center p-4 bg-black/40 rounded-3xl border border-white/5 mt-4">
+        <div className="flex flex-col items-center justify-center p-4 bg-[var(--app-surface)] rounded-3xl border border-[var(--app-border)] mt-4 text-[var(--app-muted)]">
             <div className="flex items-center justify-between w-full mb-4 px-2">
                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">OTOMATİK LED DİZİLİMİ</h4>
 
@@ -143,7 +143,7 @@ const LedVisualization: React.FC<Props> = ({ config, layout, alternativeLayout }
                 )}
             </div>
 
-            <div style={{ width: containerSize, height: containerSize }} className="relative flex items-center justify-center bg-[#050507] rounded-xl border border-white/10 shadow-inner group">
+            <div style={{ width: containerSize, height: containerSize }} className="relative flex items-center justify-center bg-[var(--app-bg)] rounded-xl border border-[var(--app-border)] shadow-inner group">
                 <svg width={scaledWidth} height={scaledHeight} style={{ overflow: 'visible' }}>
                     {/* Frame Outline */}
                     <rect x={0} y={0} width={scaledWidth} height={scaledHeight} fill="none" stroke="#6366f1" strokeWidth="2" rx="4" />

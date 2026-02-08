@@ -7,11 +7,14 @@ import DashboardLayout from './components/DashboardLayout';
 import OrdersPage from './pages/OrdersPage';
 import AdminSettings from './pages/AdminSettings';
 import './index.css';
+import { initThemeMode } from './services/theme';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
+
+initThemeMode();
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(

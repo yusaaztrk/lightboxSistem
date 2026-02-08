@@ -18,6 +18,13 @@ public class MembershipController : ControllerBase
         _context = context;
     }
 
+    private static string NormalizePhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return string.Empty;
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        return digits;
+    }
+
     // --- TYPES ---
     [HttpGet("types")]
     public async Task<ActionResult<IEnumerable<MembershipType>>> GetTypes()
@@ -65,7 +72,10 @@ public class MembershipController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        if (await _context.Members.AnyAsync(m => m.PhoneNumber == request.PhoneNumber))
+        var phone = NormalizePhone(request.PhoneNumber);
+        if (string.IsNullOrEmpty(phone)) return BadRequest("Telefon numarası gereklidir.");
+
+        if (await _context.Members.AnyAsync(m => m.PhoneNumber == phone))
         {
             return BadRequest("Bu numara ile kayıtlı bir üye zaten var.");
         }
@@ -73,7 +83,7 @@ public class MembershipController : ControllerBase
         var member = new Member
         {
             FullName = request.FullName,
-            PhoneNumber = request.PhoneNumber,
+            PhoneNumber = phone,
             CompanyName = request.CompanyName,
             MembershipTypeId = request.MembershipTypeId,
             IsApproved = false // Default
@@ -134,9 +144,13 @@ public class MembershipController : ControllerBase
     [HttpGet("check/{phoneNumber}")]
     public async Task<IActionResult> CheckDiscount(string phoneNumber)
     {
+        var phone = NormalizePhone(phoneNumber);
+        if (string.IsNullOrEmpty(phone))
+            return Ok(new { hasMembership = false, discount = 0 });
+
         var member = await _context.Members
             .Include(m => m.MembershipType)
-            .FirstOrDefaultAsync(m => m.PhoneNumber == phoneNumber && m.IsApproved);
+            .FirstOrDefaultAsync(m => m.PhoneNumber == phone && m.IsApproved);
 
         if (member == null)
             return Ok(new { hasMembership = false, discount = 0 });

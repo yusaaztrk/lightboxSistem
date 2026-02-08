@@ -5,20 +5,23 @@ using LightboxBackend.Models;
 public class LedOptimizationService
 {
     private const decimal EDGE_MARGIN_CM = 5;
-    private const decimal LED_SPACING_CM = 15;
     private const decimal LENGTH_MARGIN_CM = 2; // Montaj payı: kablo lehim ve montaj rahatlığı
     
     public (LedLayoutResult optimal, LedLayoutResult alternative) 
         CalculateOptimalLayout(decimal widthCm, decimal heightCm, 
-                               bool isDoubleSided, decimal ledPricePerMeter)
+                               bool isDoubleSided, decimal ledPricePerMeter,
+                               decimal ledSpacingCm)
     {
+        if (ledSpacingCm <= 0)
+            ledSpacingCm = 15;
+
         // Vertical layout: strips run along height
         var verticalResult = CalculateVerticalLayout(widthCm, heightCm, 
-                                                      isDoubleSided, ledPricePerMeter);
+                                                      isDoubleSided, ledPricePerMeter, ledSpacingCm);
         
         // Horizontal layout: strips run along width
         var horizontalResult = CalculateHorizontalLayout(widthCm, heightCm, 
-                                                          isDoubleSided, ledPricePerMeter);
+                                                          isDoubleSided, ledPricePerMeter, ledSpacingCm);
         
         // Select the cheaper option
         if (verticalResult.TotalCost <= horizontalResult.TotalCost)
@@ -28,7 +31,8 @@ public class LedOptimizationService
     }
     
     private LedLayoutResult CalculateVerticalLayout(decimal widthCm, decimal heightCm, 
-                                                     bool isDoubleSided, decimal ledPrice)
+                                                     bool isDoubleSided, decimal ledPrice,
+                                                     decimal ledSpacingCm)
     {
         // 5cm margin on both sides
         var spanWidth = widthCm - (2 * EDGE_MARGIN_CM);
@@ -47,7 +51,7 @@ public class LedOptimizationService
         }
 
         // Calculate number of GAPS needed to cover the span with max 15cm spacing
-        var gapCount = (int)Math.Ceiling(spanWidth / LED_SPACING_CM);
+        var gapCount = (int)Math.Ceiling(spanWidth / ledSpacingCm);
         
         // Total strips = Gaps + 1 (Start strip + End strip + intermediates)
         var stripCount = gapCount + 1;
@@ -69,7 +73,8 @@ public class LedOptimizationService
     }
     
     private LedLayoutResult CalculateHorizontalLayout(decimal widthCm, decimal heightCm, 
-                                                       bool isDoubleSided, decimal ledPrice)
+                                                       bool isDoubleSided, decimal ledPrice,
+                                                       decimal ledSpacingCm)
     {
         // 5cm margin on top and bottom
         var spanHeight = heightCm - (2 * EDGE_MARGIN_CM);
@@ -87,7 +92,7 @@ public class LedOptimizationService
         }
         
         // Calculate number of GAPS
-        var gapCount = (int)Math.Ceiling(spanHeight / LED_SPACING_CM);
+        var gapCount = (int)Math.Ceiling(spanHeight / ledSpacingCm);
         var stripCount = gapCount + 1;
         
         // Each strip runs the full width MINUS margins (2cm soldering)

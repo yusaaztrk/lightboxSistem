@@ -6,7 +6,7 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-[#050507] text-white font-sans flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] font-sans flex flex-col relative overflow-hidden">
             {/* Background Ambience */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[150px] rounded-full" />
@@ -35,13 +35,13 @@ const LandingPage: React.FC = () => {
                     {/* Card 1: Lightbox Calculator */}
                     <button
                         onClick={() => navigate('/lightbox')}
-                        className="group relative bg-[#0a0a0c] border border-white/10 hover:border-indigo-500/50 p-10 rounded-[2.5rem] text-left transition-all duration-500 hover:shadow-[0_0_50px_-10px_rgba(79,70,229,0.3)] hover:-translate-y-2 flex flex-col"
+                        className="group relative bg-[var(--app-surface)] border border-[var(--app-border)] hover:border-indigo-500/50 p-10 rounded-[2.5rem] text-left transition-all duration-500 hover:shadow-[0_0_50px_-10px_rgba(79,70,229,0.3)] hover:-translate-y-2 flex flex-col"
                     >
                         <div className="w-16 h-16 bg-indigo-600/10 rounded-2xl flex items-center justify-center mb-8 border border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-500">
                             <Box className="w-8 h-8 text-indigo-500 group-hover:text-white transition-colors" />
                         </div>
 
-                        <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2 group-hover:text-indigo-400 transition-colors">Lightbox Hesapla</h2>
+                        <h2 className="text-3xl font-black text-[var(--app-text)] uppercase italic tracking-tighter mb-2 group-hover:text-indigo-400 transition-colors">Lightbox Hesapla</h2>
                         <p className="text-gray-500 text-xs font-bold uppercase tracking-wide leading-relaxed mb-8 group-hover:text-gray-400">
                             Profil, LED, adaptör ve montaj dahil komple sistem hesabı.
                         </p>
@@ -54,13 +54,13 @@ const LandingPage: React.FC = () => {
                     {/* Card 2: Fabric Calculator */}
                     <button
                         onClick={() => navigate('/fabric')}
-                        className="group relative bg-[#0a0a0c] border border-white/10 hover:border-emerald-500/50 p-10 rounded-[2.5rem] text-left transition-all duration-500 hover:shadow-[0_0_50px_-10px_rgba(16,185,129,0.3)] hover:-translate-y-2 flex flex-col"
+                        className="group relative bg-[var(--app-surface)] border border-[var(--app-border)] hover:border-emerald-500/50 p-10 rounded-[2.5rem] text-left transition-all duration-500 hover:shadow-[0_0_50px_-10px_rgba(16,185,129,0.3)] hover:-translate-y-2 flex flex-col"
                     >
                         <div className="w-16 h-16 bg-emerald-600/10 rounded-2xl flex items-center justify-center mb-8 border border-emerald-500/20 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-500">
                             <Layers className="w-8 h-8 text-emerald-500 group-hover:text-white transition-colors" />
                         </div>
 
-                        <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-2 group-hover:text-emerald-400 transition-colors">Sadece Kumaş</h2>
+                        <h2 className="text-3xl font-black text-[var(--app-text)] uppercase italic tracking-tighter mb-2 group-hover:text-emerald-400 transition-colors">Sadece Kumaş</h2>
                         <p className="text-gray-500 text-xs font-bold uppercase tracking-wide leading-relaxed mb-8 group-hover:text-gray-400">
                             Sadece ön yüz, görsel baskı ve kumaş maliyeti hesabı.
                         </p>

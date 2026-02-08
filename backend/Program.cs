@@ -39,6 +39,19 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    // Seed Admin User if not exists
+    if (!db.AdminUsers.Any())
+    {
+        // Explicitly requested credentials
+        string pHash = BCrypt.Net.BCrypt.HashPassword("eminlet3443");
+        db.AdminUsers.Add(new LightboxBackend.Models.AdminUser 
+        { 
+            Username = "eminadminakin", 
+            PasswordHash = pHash 
+        });
+        db.SaveChanges();
+    }
 }
 
 app.Run();

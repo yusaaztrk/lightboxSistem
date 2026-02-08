@@ -40,6 +40,8 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
         return { display, raw: formatted };
     };
 
+    const normalizePhone = (value: string) => value.replace(/\D/g, '');
+
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { display } = formatPhoneNumber(e.target.value);
         setFormData(prev => ({ ...prev, phone: display }));
@@ -61,7 +63,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
         setIsValidating(true);
         setDiscountError('');
         try {
-            const result = await import('../services/api').then(m => m.api.validateCode(discountCode, formData.phone));
+            const result = await import('../services/api').then(m => m.api.validateCode(discountCode, normalizePhone(formData.phone)));
             setAppliedDiscount(result);
         } catch (error: any) {
             setAppliedDiscount(null);
@@ -150,7 +152,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                                 onClick={async () => {
                                     if (formData.phone.length < 13) return;
                                     try {
-                                        const status = await import('../services/api').then(m => m.api.checkMembership(formData.phone));
+                                        const status = await import('../services/api').then(m => m.api.checkMembership(normalizePhone(formData.phone)));
                                         if (status.hasMembership && status.discount > 0) {
                                             setAppliedDiscount({ percentage: status.discount, owner: formData.phone });
                                             // Optional success toast?
