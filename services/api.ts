@@ -1,7 +1,16 @@
 import axios from 'axios';
-import { PricingFactors, Order, ConfigOptions, CalculationBreakdown, ProfileCost, BackingCost, AdapterPrice, ProfileColor, SpinWheelItem, CustomerLead } from '../types';
+import { PricingFactors, Order, ConfigOptions, CalculationBreakdown, ProfileCost, BackingCost, AdapterPrice, ProfileColor, CustomerLead } from '../types';
 
 const API_URL = 'http://localhost:5000/api';
+
+const getAdminToken = () => {
+  try { return localStorage.getItem('adminToken') || ''; } catch { return ''; }
+};
+
+const adminHeaders = () => {
+  const token = getAdminToken();
+  return token ? { 'X-Admin-Token': token } : {};
+};
 
 // Shape of data from Backend
 interface SystemSettings {
@@ -15,6 +24,8 @@ interface SystemSettings {
   defaultLedSpacingCm?: number;
   ledIndoorPricePerMeter: number;
   ledOutdoorPricePerMeter: number;
+  whatsAppNumber?: string;
+  scrollingMessage?: string;
 }
 
 export const api = {
@@ -63,12 +74,17 @@ export const api = {
   },
 
   async getOrders(): Promise<Order[]> {
-    const response = await axios.get<Order[]>(`${API_URL}/orders`);
+    const response = await axios.get<Order[]>(`${API_URL}/orders`, { headers: adminHeaders() });
     return response.data;
   },
 
   async getOrder(id: number | string): Promise<Order> {
-    const response = await axios.get<Order>(`${API_URL}/orders/${id}`);
+    const response = await axios.get<Order>(`${API_URL}/orders/${id}`, { headers: adminHeaders() });
+    return response.data;
+  },
+
+  async getOrderPublic(id: number | string, code: string): Promise<Order> {
+    const response = await axios.get<Order>(`${API_URL}/orders/public/${id}`, { params: { code } });
     return response.data;
   },
 
@@ -78,11 +94,11 @@ export const api = {
   },
 
   async updateOrder(id: number | string, order: Order): Promise<void> {
-    await axios.put(`${API_URL}/orders/${id}`, order);
+    await axios.put(`${API_URL}/orders/${id}`, order, { headers: adminHeaders() });
   },
 
   async deleteOrder(id: number | string): Promise<void> {
-    await axios.delete(`${API_URL}/orders/${id}`);
+    await axios.delete(`${API_URL}/orders/${id}`, { headers: adminHeaders() });
   },
 
   async calculateDetails(config: ConfigOptions): Promise<CalculationBreakdown> {
@@ -165,27 +181,26 @@ export const api = {
     return axios.delete(`${API_URL}/profilecolors/${id}`);
   },
 
-  // --- Spin Wheel ---
-  async getWheelStatus(): Promise<{ isEnabled: boolean }> {
-    return (await axios.get<{ isEnabled: boolean }>(`${API_URL}/spinwheel/status`)).data;
-  },
-  async getWheelConfig() {
-    return (await axios.get<SpinWheelItem[]>(`${API_URL}/spinwheel/config`)).data;
-  },
-  async addWheelItem(item: Partial<SpinWheelItem>) {
-    return (await axios.post<SpinWheelItem>(`${API_URL}/spinwheel/config`, item)).data;
-  },
-  async deleteWheelItem(id: number) {
-    return axios.delete(`${API_URL}/spinwheel/config/${id}`);
-  },
-  async spinWheel(phoneNumber: string) {
-    return (await axios.post(`${API_URL}/spinwheel/spin`, { phoneNumber })).data;
-  },
-  async getLeads() {
-    return (await axios.get<CustomerLead[]>(`${API_URL}/spinwheel/leads`)).data;
-  },
-  async validateCode(code: string, phoneNumber: string) {
+  // --- Discount Codes ---
+  // Note: Backend currently serves these endpoints under /spinwheel for legacy reasons.
+  async validateDiscountCode(code: string, phoneNumber: string) {
     return (await axios.post<{ percentage: number, owner: string }>(`${API_URL}/spinwheel/validate`, { code, phoneNumber })).data;
+  },
+  // Admin manual discount codes
+  async getDiscountCodes() {
+    return (await axios.get<CustomerLead[]>(`${API_URL}/discountcodes`)).data;
+  },
+  async createDiscountCode(payload: { phoneNumber?: string | null; discountPercentage: number; code?: string | null; label?: string | null }) {
+    const normalized = {
+      phoneNumber: payload.phoneNumber ?? '',
+      discountPercentage: payload.discountPercentage,
+      code: payload.code ?? null,
+      label: payload.label ?? null,
+    };
+    return (await axios.post<CustomerLead>(`${API_URL}/discountcodes`, normalized)).data;
+  },
+  async deleteDiscountCode(id: number) {
+    return axios.delete(`${API_URL}/discountcodes/${id}`);
   },
 
   // --- Membership ---
@@ -216,12 +231,20 @@ export const api = {
   async checkMembership(phoneNumber: string) {
     return (await axios.get<{ hasMembership: boolean, discount: number, typeName: string, memberName: string }>(`${API_URL}/membership/check/${phoneNumber}`)).data;
   },
-  async deleteLead(id: number) {
-    return axios.delete(`${API_URL}/spinwheel/lead/${id}`);
+  // Backward-compatible alias
+  async validateCode(code: string, phoneNumber: string) {
+    return api.validateDiscountCode(code, phoneNumber);
   },
 
   // Auth
   async adminLogin(credentials: { username: string, password: string }) {
-    return axios.post(`${API_URL}/auth/admin-login`, credentials);
+    const payload: any = {
+      username: credentials.username,
+      password: credentials.password,
+      Username: credentials.username,
+      Password: credentials.password,
+    };
+    return axios.post(`${API_URL}/auth/admin-login`, payload);
   }
 };
+

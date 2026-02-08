@@ -69,14 +69,25 @@ const GeneralSettings: React.FC = () => {
                         Oranlar & LED Modülleri
                     </h3>
                     <div className="space-y-4">
-                        <InputGroup label="İşçilik Oranı (%)" value={settings.laborRatePercentage} onChange={v => setSettings({ ...settings, laborRatePercentage: v })} />
-                        <InputGroup label="Kâr Marjı (%)" value={settings.profitMarginPercentage} onChange={v => setSettings({ ...settings, profitMarginPercentage: v })} />
-                        <InputGroup label="Kumaş Kâr Marjı (%)" value={settings.fabricProfitMarginPercentage} onChange={v => setSettings({ ...settings, fabricProfitMarginPercentage: v })} />
-                        <InputGroup label="Ayak (Takım) Ücreti" value={settings.standPrice} onChange={v => setSettings({ ...settings, standPrice: v })} />
-                        <InputGroup label="Amper / Metre" value={settings.amperesPerMeter} onChange={v => setSettings({ ...settings, amperesPerMeter: v })} />
-                        <InputGroup label="LED Dizim Aralığı (Varsayılan cm)" value={settings.defaultLedSpacingCm ?? 15} onChange={v => setSettings({ ...settings, defaultLedSpacingCm: v })} />
-                        <InputGroup label="LED (İç) $/m" value={settings.ledIndoorPricePerMeter} onChange={v => setSettings({ ...settings, ledIndoorPricePerMeter: v })} />
-                        <InputGroup label="LED (Dış) $/m" value={settings.ledOutdoorPricePerMeter} onChange={v => setSettings({ ...settings, ledOutdoorPricePerMeter: v })} />
+                        <InputGroup label="İşçilik Oranı (%)" value={settings.laborRatePercentage} onChange={v => setSettings({ ...settings, laborRatePercentage: Number(v) })} />
+                        <InputGroup label="Kâr Marjı (%)" value={settings.profitMarginPercentage} onChange={v => setSettings({ ...settings, profitMarginPercentage: Number(v) })} />
+                        <InputGroup label="Kumaş Kâr Marjı (%)" value={settings.fabricProfitMarginPercentage} onChange={v => setSettings({ ...settings, fabricProfitMarginPercentage: Number(v) })} />
+                        <InputGroup label="Ayak (Takım) Ücreti" value={settings.standPrice} onChange={v => setSettings({ ...settings, standPrice: Number(v) })} />
+                        <InputGroup label="Amper / Metre" value={settings.amperesPerMeter} onChange={v => setSettings({ ...settings, amperesPerMeter: Number(v) })} />
+                        <InputGroup label="LED Dizim Aralığı (Varsayılan cm)" value={settings.defaultLedSpacingCm ?? 15} onChange={v => setSettings({ ...settings, defaultLedSpacingCm: Number(v) })} />
+                        <InputGroup label="LED (İç) $/m" value={settings.ledIndoorPricePerMeter} onChange={v => setSettings({ ...settings, ledIndoorPricePerMeter: Number(v) })} />
+                        <InputGroup label="LED (Dış) $/m" value={settings.ledOutdoorPricePerMeter} onChange={v => setSettings({ ...settings, ledOutdoorPricePerMeter: Number(v) })} />
+                    </div>
+                </div>
+
+                <div className="bg-admin-card border border-admin-border p-8 rounded-3xl space-y-6 md:col-span-2">
+                    <h3 className="text-xs font-black text-purple-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                        İletişim & Duyuru
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InputGroup label="WhatsApp Numarası (Örn: 90500...)" isText value={settings.whatsAppNumber || ''} onChange={v => setSettings({ ...settings, whatsAppNumber: v })} />
+                        <InputGroup label="Kayan Site Mesajı" isText value={settings.scrollingMessage || ''} onChange={v => setSettings({ ...settings, scrollingMessage: v })} />
                     </div>
                 </div>
             </div>

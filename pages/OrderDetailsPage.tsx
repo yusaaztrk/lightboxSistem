@@ -61,6 +61,8 @@ const OrderDetailsPage: React.FC = () => {
         console.error("Parse error", e);
     }
 
+    const discountMeta: any = (config as any)?.discount || null;
+
     const handleDelete = async () => {
         if (!window.confirm("Bu siparişi silmek istediğinize emin misiniz?")) return;
         try {
@@ -122,6 +124,29 @@ const OrderDetailsPage: React.FC = () => {
                         <p className="text-xs text-admin-text-muted font-bold tracking-widest">DETAYLI MALİYET VE YAPILANDIRMA</p>
                     </div>
                 </div>
+
+                {discountMeta && typeof discountMeta === 'object' && (
+                    <div className="bg-admin-card border border-admin-border rounded-2xl p-4">
+                        <div className="text-[10px] font-black text-admin-text-muted uppercase tracking-widest">İndirim</div>
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="bg-white/5 border border-white/5 rounded-xl p-3">
+                                <div className="text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Eski</div>
+                                <div className="mt-1 text-white font-black">${Number(discountMeta.from || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/5 border border-white/5 rounded-xl p-3">
+                                <div className="text-[10px] font-black text-admin-text-muted uppercase tracking-widest">İndirim</div>
+                                <div className="mt-1 text-red-400 font-black">-%{Number(discountMeta.percentage || 0)} (${Number(discountMeta.amount || 0).toFixed(2)})</div>
+                                {discountMeta.code ? (
+                                    <div className="text-[10px] text-admin-text-muted font-bold mt-1">Kod: {String(discountMeta.code)}</div>
+                                ) : null}
+                            </div>
+                            <div className="bg-white/5 border border-white/5 rounded-xl p-3">
+                                <div className="text-[10px] font-black text-admin-text-muted uppercase tracking-widest">Yeni</div>
+                                <div className="mt-1 text-emerald-400 font-black">${Number(discountMeta.to || 0).toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex items-center gap-3">
                     <select

@@ -27,6 +27,7 @@ const AmbientLight = 'ambientLight' as any;
 interface ModelProps {
   config: ConfigOptions;
   isMockupMode?: boolean;
+  cameraOffset?: { x: number; y: number; z: number };
 }
 
 const TexturedMaterial: React.FC<{ url: string; isTechnical: boolean; isLightOn: boolean }> = ({ url, isTechnical, isLightOn }) => {
@@ -45,7 +46,7 @@ const TexturedMaterial: React.FC<{ url: string; isTechnical: boolean; isLightOn:
       transparent={isTechnical}
       opacity={isTechnical ? 0.0 : 1.0}
       emissive="#ffffff"
-      emissiveIntensity={isTechnical ? 0.0 : (isLightOn ? 1.5 : 0.0)}
+      emissiveIntensity={isTechnical ? 0.0 : (isLightOn ? 0.75 : 0.0)}
       toneMapped={false} // Allows colors to exceed 1.0 for bloom effect
       visible={!isTechnical}
     />
@@ -204,7 +205,7 @@ const LightboxModel: React.FC<ModelProps> = ({ config }) => {
               <TexturedMaterial url={userImageUrl} isTechnical={isTechnical} isLightOn={isLightOn} />
             </React.Suspense>
           ) : (
-            <MeshStandardMaterial color="#222" emissive="#ffffff" emissiveIntensity={isLightOn ? 0.5 : 0.01} />
+            <MeshStandardMaterial color="#222" emissive="#ffffff" emissiveIntensity={isLightOn ? 0.25 : 0.01} />
           )}
         </Mesh>
       )}
@@ -250,7 +251,7 @@ const WorkshopScene = () => {
         position={[10, 20, 10]}
         angle={0.25}
         penumbra={1}
-        intensity={4}
+        intensity={2}
         castShadow
         color="#ffffff"
       />
@@ -258,9 +259,13 @@ const WorkshopScene = () => {
   );
 };
 
-const Lightbox3D: React.FC<ModelProps> = ({ config, isMockupMode = false }) => {
+const Lightbox3D: React.FC<ModelProps> = ({ config, isMockupMode = false, cameraOffset }) => {
   const maxDim = Math.max(config.width, config.height) * 0.01;
   const cameraDist = isMockupMode ? 3.0 : Math.max(2.5, maxDim * 2.5);
+  const ox = cameraOffset?.x ?? 0;
+  const oy = cameraOffset?.y ?? 0;
+  const oz = cameraOffset?.z ?? 0;
+  const targetY = maxDim / 2 + oy;
 
   return (
     <div className={`w-full h-full rounded-[2.5rem] overflow-hidden relative ${isMockupMode ? 'bg-transparent' : 'bg-gradient-to-b from-[#1a1a1e] to-[#050505]'}`}>
@@ -272,7 +277,7 @@ const Lightbox3D: React.FC<ModelProps> = ({ config, isMockupMode = false }) => {
           alpha: isMockupMode
         }}
       >
-        <PerspectiveCamera makeDefault position={[0, maxDim / 2, cameraDist]} fov={40} />
+        <PerspectiveCamera makeDefault position={[ox, targetY, cameraDist + oz]} fov={40} />
         <OrbitControls
           enablePan={false}
           enableZoom={!isMockupMode}
@@ -280,6 +285,7 @@ const Lightbox3D: React.FC<ModelProps> = ({ config, isMockupMode = false }) => {
           maxDistance={15}
           maxPolarAngle={Math.PI / 1.8}
           minPolarAngle={0}
+          target={[0, targetY, 0] as any}
           makeDefault
         />
 
@@ -302,15 +308,6 @@ const Lightbox3D: React.FC<ModelProps> = ({ config, isMockupMode = false }) => {
           )}
         </React.Suspense>
       </Canvas>
-
-      {!isMockupMode && (
-        <div className="absolute top-8 left-8 flex flex-col gap-1 z-10">
-          <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,1)]" />
-            <span className="text-[9px] font-black tracking-[0.2em] text-white/70 uppercase">PRO STUDIO VIEW</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

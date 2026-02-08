@@ -3,6 +3,8 @@ using LightboxBackend.Data;
 using LightboxBackend.Models;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
+using System;
+using System.Collections.Concurrent;
 
 namespace LightboxBackend.Controllers
 {
@@ -10,6 +12,8 @@ namespace LightboxBackend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        public static readonly ConcurrentDictionary<string, DateTime> AdminTokens = new();
+
         private readonly AppDbContext _context;
 
         public AuthController(AppDbContext context)
@@ -44,9 +48,10 @@ namespace LightboxBackend.Controllers
                 return Unauthorized("Geçersiz kullanıcı adı veya şifre.");
             }
 
-            // Success! 
-            // In a real JWT setup, return token. For this simple gate, return success flag.
-            return Ok(new { success = true, message = "Giriş başarılı" });
+            var token = Guid.NewGuid().ToString("N");
+            AdminTokens[token] = DateTime.UtcNow.AddHours(8);
+
+            return Ok(new { success = true, message = "Giriş başarılı", token });
         }
     }
 }

@@ -27,11 +27,12 @@ import LedVisualization from '../components/LedVisualization';
 import { api } from '../services/api';
 import { addCartItem } from '../services/cart';
 
-import OrderModal, { CustomerData } from '../components/OrderModal';
-
-import LuckyWheel from '../components/LuckyWheel';
-
 import MembershipModal from '../components/MembershipModal';
+
+import AddToCartModal from '../components/AddToCartModal';
+
+import { compressImageToThumbnail } from '../utils/imageCompression';
+
 
 
 
@@ -49,7 +50,12 @@ const loadCachedConfig = (): ConfigOptions | null => {
     try {
         const raw = localStorage.getItem(LIGHTBOX_CONFIG_CACHE);
         if (!raw) return null;
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+            delete parsed.userImageUrl;
+            delete parsed.backImageUrl;
+        }
+        return parsed;
     } catch { return null; }
 };
 
@@ -63,12 +69,11 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
     const [selectedScene, setSelectedScene] = useState<MockupScene | null>(null);
 
-    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+    const [cameraOffset, setCameraOffset] = useState({ x: 0, y: 0, z: 0 });
 
-    // Save config to localStorage on change
-    useEffect(() => {
-        try { localStorage.setItem(LIGHTBOX_CONFIG_CACHE, JSON.stringify(config)); } catch { }
-    }, [config]);
+    const [isAddToCartModalOpen, setIsAddToCartModalOpen] = useState(false);
+
+
 
 
 
@@ -229,9 +234,16 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
 
     const updateConfig = (key: keyof ConfigOptions, value: any) => {
-
-        setConfig(prev => ({ ...prev, [key]: value }));
-
+        setConfig(prev => {
+            const next = { ...prev, [key]: value };
+            try {
+                const cacheNext: any = { ...next };
+                delete cacheNext.userImageUrl;
+                delete cacheNext.backImageUrl;
+                localStorage.setItem(LIGHTBOX_CONFIG_CACHE, JSON.stringify(cacheNext));
+            } catch { }
+            return next;
+        });
     };
 
 
@@ -293,55 +305,6 @@ const LightboxConfigurator: React.FC<Props> = () => {
             reader.readAsDataURL(file);
 
         }
-
-    };
-
-
-
-    const handleOrderSubmit = async (customerData: CustomerData) => {
-
-        if (!breakdown) return;
-
-
-
-        const order = {
-
-            customerName: customerData.fullName,
-
-            customerPhone: customerData.phone,
-
-            dimensions: `${config.width}x${config.height}`,
-
-            price: customerData.discountedPrice ?? breakdown.finalPrice,
-
-            configurationDetails: JSON.stringify({ ...config, note: customerData.note }),
-
-            costDetails: JSON.stringify(breakdown), // Send full breakdown
-
-            status: 'Pending'
-
-        };
-
-
-
-        try {
-
-            const created = await api.createOrder(order);
-
-            setIsOrderModalOpen(false);
-
-            navigate(`/order/${created.id}`);
-
-        } catch (error) {
-
-            console.error(error);
-
-            alert("Sipariş oluşturulurken bir hata oluştu.");
-
-            throw error;
-
-        }
-
     };
 
 
@@ -536,7 +499,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">GENİŞLİK (CM)</span>
 
-                        <input type="number" value={config.width} onChange={(e) => updateConfig('width', Number(e.target.value))} className="w-full px-4 md:px-6 py-4 md:py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-white focus:ring-2 focus:ring-indigo-500 outline-none text-lg md:text-xl transition-all" />
+                        <input type="number" value={config.width} onChange={(e) => { const val = e.target.valueAsNumber; if (!isNaN(val)) updateConfig('width', val); }} className="w-full px-4 md:px-6 py-4 md:py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-white focus:ring-2 focus:ring-indigo-500 outline-none text-lg md:text-xl transition-all" />
 
                     </div>
 
@@ -544,7 +507,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">YÜKSEKLİK (CM)</span>
 
-                        <input type="number" value={config.height} onChange={(e) => updateConfig('height', Number(e.target.value))} className="w-full px-4 md:px-6 py-4 md:py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-white focus:ring-2 focus:ring-indigo-500 outline-none text-lg md:text-xl transition-all" />
+                        <input type="number" value={config.height} onChange={(e) => { const val = e.target.valueAsNumber; if (!isNaN(val)) updateConfig('height', val); }} className="w-full px-4 md:px-6 py-4 md:py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-white focus:ring-2 focus:ring-indigo-500 outline-none text-lg md:text-xl transition-all" />
 
                     </div>
 
@@ -712,7 +675,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
 
 
-                {breakdown && <CostBreakdownAccordion breakdown={breakdown} />}
+
 
 
 
@@ -720,44 +683,17 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                     {breakdown ? (
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button
 
-                            <button
+                            onClick={() => setIsAddToCartModalOpen(true)}
 
-                                onClick={() => {
-                                    if (!breakdown) return;
-                                    addCartItem({
-                                        type: 'lightbox',
-                                        title: `Lightbox ${config.width}x${config.height} cm`,
-                                        price: breakdown.finalPrice,
-                                        configurationDetails: JSON.stringify(config),
-                                        costDetails: JSON.stringify(breakdown),
-                                        previewImageUrl: config.userImageUrl,
-                                    });
-                                    alert('Sepete eklendi');
-                                }}
+                            className="w-full bg-white text-black font-black py-3.5 md:py-4 rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 shadow-2xl uppercase tracking-widest text-xs group active:scale-[0.98]"
 
-                                className="w-full bg-white/5 border border-white/10 text-white font-black py-3.5 md:py-4 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center gap-2 shadow-xl uppercase tracking-widest text-xs group active:scale-[0.98]"
+                        >
 
-                            >
+                            SEPETE EKLE <ShoppingBag className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
 
-                                SEPETE EKLE
-
-                            </button>
-
-                            <button
-
-                                onClick={() => setIsOrderModalOpen(true)}
-
-                                className="w-full bg-white text-black font-black py-3.5 md:py-4 rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 shadow-2xl uppercase tracking-widest text-xs group active:scale-[0.98]"
-
-                            >
-
-                                SİPARİŞİ TAMAMLA <ShoppingBag className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-
-                            </button>
-
-                        </div>
+                        </button>
 
                     ) : (
 
@@ -775,7 +711,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
 
 
-    const [isWheelOpen, setIsWheelOpen] = useState(false);
+
 
     const [isMembershipOpen, setIsMembershipOpen] = useState(false);
 
@@ -787,7 +723,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
             <div className="public-app">
 
-                <LuckyWheel isOpen={isWheelOpen} onClose={() => setIsWheelOpen(false)} />
+
 
                 <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />
 
@@ -805,8 +741,6 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                             price={breakdown?.finalPrice || 0}
 
-                            onOpenWheel={() => setIsWheelOpen(true)}
-
                             onOpenMember={() => setIsMembershipOpen(true)}
 
                             activePage="lightbox"
@@ -823,48 +757,85 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.08),transparent)] pointer-events-none" />
 
-                            <Lightbox3D config={config} isMockupMode={false} />
+                            <Lightbox3D config={config} isMockupMode={false} cameraOffset={cameraOffset} />
 
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-1.5 bg-black/60 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl z-20">
+                        </div>
 
-                                <button onClick={() => updateConfig('viewMode', 'finish')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.viewMode === 'finish' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500'}`}>
-
-                                    <Eye className="w-3 h-3" /> ATÖLYE
-
-                                </button>
-
-                                <button onClick={() => updateConfig('viewMode', 'technical')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.viewMode === 'technical' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500'}`}>
-
-                                    <EyeOff className="w-3 h-3" /> TEKNİK
-
-                                </button>
-
+                        <div className="mt-4 flex justify-center">
+                            <div className="flex gap-2 p-1.5 bg-black/60 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl">
                                 <button
-
+                                    type="button"
                                     onClick={() => updateConfig('isLightOn', !config.isLightOn)}
-
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.isLightOn ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
                                 >
-
                                     <Sparkles className={`w-3 h-3 ${config.isLightOn ? 'fill-yellow-400' : ''}`} /> {config.isLightOn ? 'IŞIK AÇIK' : 'IŞIK KAPALI'}
-
                                 </button>
 
                                 <button
-
+                                    type="button"
                                     onClick={() => updateConfig('hasFeet', !config.hasFeet)}
-
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.hasFeet ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
                                 >
-
                                     <Box className="w-3 h-3" /> {config.hasFeet ? 'AYAKLI MOD' : 'DUVAR MONTAJ'}
-
                                 </button>
+                            </div>
+                        </div>
 
+                        <div className="mt-4 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-3">
+                            <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-2">KAMERA</div>
+                            <input
+                                type="range"
+                                min={-2}
+                                max={2}
+                                step={0.01}
+                                value={cameraOffset.y}
+                                onChange={e => setCameraOffset(prev => ({ ...prev, y: Number(e.target.value) }))}
+                                className="w-full"
+                            />
+                            <input
+                                type="range"
+                                min={-2}
+                                max={2}
+                                step={0.01}
+                                value={cameraOffset.x}
+                                onChange={e => setCameraOffset(prev => ({ ...prev, x: Number(e.target.value) }))}
+                                className="w-full mt-2"
+                            />
+                            <input
+                                type="range"
+                                min={-5}
+                                max={5}
+                                step={0.01}
+                                value={cameraOffset.z}
+                                onChange={e => setCameraOffset(prev => ({ ...prev, z: Number(e.target.value) }))}
+                                className="w-full mt-2"
+                            />
+                        </div>
+
+                        <div className="mt-14 mb-10 px-4">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-tighter">
+                                        <LayoutGrid className="w-5 h-5 text-indigo-500" /> MEKAN SİMÜLASYONU
+                                    </h2>
+                                    <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">Ürünü Farklı Ortamlarda Test Edin</p>
+                                </div>
                             </div>
 
+                            <div className="grid grid-cols-3 gap-4">
+                                {MOCKUP_SCENES.map((scene) => (
+                                    <div
+                                        key={scene.id}
+                                        onClick={() => setSelectedScene(scene)}
+                                        className={`group relative h-36 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
+                                    >
+                                        <img src={scene.url} alt={scene.title} className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-4">
+                                            <span className="text-[9px] font-black text-white uppercase tracking-tighter">{scene.title}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
                     </div>
@@ -889,8 +860,6 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                             price={breakdown?.finalPrice || 0}
 
-                            onOpenWheel={() => setIsWheelOpen(true)}
-
                             onOpenMember={() => setIsMembershipOpen(true)}
 
                             activePage="lightbox"
@@ -899,25 +868,15 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
 
 
-                        <div className="relative h-[550px] min-h-[450px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+                        <div className="relative h-[800px] min-h-[600px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
 
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.08),transparent)] pointer-events-none" />
 
-                            <Lightbox3D config={config} isMockupMode={false} />
+                            <Lightbox3D config={config} isMockupMode={false} cameraOffset={cameraOffset} />
 
                             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 p-2.5 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl z-20">
 
-                                <button onClick={() => updateConfig('viewMode', 'finish')} className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.viewMode === 'finish' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500 hover:text-white'}`}>
 
-                                    <Eye className="w-4 h-4" /> ATÖLYE GÖRÜNÜMÜ
-
-                                </button>
-
-                                <button onClick={() => updateConfig('viewMode', 'technical')} className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.viewMode === 'technical' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500 hover:text-white'}`}>
-
-                                    <EyeOff className="w-4 h-4" /> TEKNİK ŞEMA
-
-                                </button>
 
                                 <button
 
@@ -947,6 +906,37 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                         </div>
 
+                        <div className="mt-6 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-3">
+                            <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-2">KAMERA</div>
+                            <input
+                                type="range"
+                                min={-2}
+                                max={2}
+                                step={0.01}
+                                value={cameraOffset.y}
+                                onChange={e => setCameraOffset(prev => ({ ...prev, y: Number(e.target.value) }))}
+                                className="w-full"
+                            />
+                            <input
+                                type="range"
+                                min={-2}
+                                max={2}
+                                step={0.01}
+                                value={cameraOffset.x}
+                                onChange={e => setCameraOffset(prev => ({ ...prev, x: Number(e.target.value) }))}
+                                className="w-full mt-2"
+                            />
+                            <input
+                                type="range"
+                                min={-5}
+                                max={5}
+                                step={0.01}
+                                value={cameraOffset.z}
+                                onChange={e => setCameraOffset(prev => ({ ...prev, z: Number(e.target.value) }))}
+                                className="w-full mt-2"
+                            />
+                        </div>
+
 
 
                         <div className="mt-14 mb-10 px-4">
@@ -967,7 +957,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                             </div>
 
-                            <div className="grid grid-cols-5 gap-5">
+                            <div className="grid grid-cols-3 md:grid-cols-5 gap-4 md:gap-5">
 
                                 {MOCKUP_SCENES.map((scene) => (
 
@@ -977,7 +967,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                                         onClick={() => setSelectedScene(scene)}
 
-                                        className={`group relative h-32 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
+                                        className={`group relative h-36 md:h-32 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
 
                                     >
 
@@ -1003,7 +993,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                     <div className="w-[440px] bg-[var(--app-surface)] h-full border-l border-[var(--app-border)] flex flex-col shadow-2xl z-20 overflow-y-auto custom-scrollbar">
 
-                        <SettingsPanelContent />
+                        {SettingsPanelContent()}
 
                     </div>
 
@@ -1013,18 +1003,50 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
                 {selectedScene && <MockupViewer config={config} scene={selectedScene} onClose={() => setSelectedScene(null)} />}
 
+                <AddToCartModal
+                    isOpen={isAddToCartModalOpen}
+                    onClose={() => setIsAddToCartModalOpen(false)}
+                    onConfirm={async () => {
+                        if (!breakdown) return;
 
+                        let thumbnailUrl = config.userImageUrl;
 
-                <OrderModal
+                        // Compress image to thumbnail if it exists
+                        if (config.userImageUrl) {
+                            try {
+                                thumbnailUrl = await compressImageToThumbnail(config.userImageUrl, 200, 200, 0.6);
+                                console.log('Image compressed for cart storage');
+                            } catch (error) {
+                                console.warn('Failed to compress image, using original:', error);
+                            }
+                        }
 
-                    isOpen={isOrderModalOpen}
+                        addCartItem({
+                            type: 'lightbox',
+                            title: `Lightbox ${config.width}x${config.height} cm`,
+                            price: breakdown.finalPrice,
+                            configurationDetails: JSON.stringify(config),
+                            costDetails: JSON.stringify(breakdown),
+                            previewImageUrl: thumbnailUrl,
+                        });
 
-                    onClose={() => setIsOrderModalOpen(false)}
-
-                    onSubmit={handleOrderSubmit}
-
-                    finalPrice={breakdown?.finalPrice || 0}
-
+                        try { localStorage.removeItem(LIGHTBOX_CONFIG_CACHE); } catch { }
+                        setConfig(DEFAULT_CONFIG);
+                        setBreakdown(null);
+                        try { window.dispatchEvent(new Event('open-cart-drawer')); } catch { }
+                    }}
+                    productInfo={{
+                        title: `Lightbox ${config.width}x${config.height} cm`,
+                        price: breakdown?.finalPrice || 0,
+                        width: config.width,
+                        height: config.height,
+                        type: 'lightbox',
+                        imageUrl: config.userImageUrl,
+                        profileType: config.profile,
+                        profileDepth: config.depth,
+                        backingType: availableBackings.find(b => b.materialType === config.backplate)?.displayName || 'Bilinmiyor',
+                        ledUsage: config.ledType === 'INNER' ? 'indoor' : 'outdoor'
+                    }}
                 />
 
             </div>

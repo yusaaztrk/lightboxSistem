@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { ProfileCost, BackingCost, AdapterPrice, ProfileColor, SpinWheelItem, CustomerLead } from '../types';
-import { Save, Trash2, AlertCircle, RotateCcw, Pencil, X, Palette, Plus, Gift, Database, Check } from 'lucide-react';
+import { ProfileCost, BackingCost, AdapterPrice, ProfileColor } from '../types';
+import { Save, Trash2, AlertCircle, RotateCcw, Pencil, X, Palette, Plus, Database, Check } from 'lucide-react';
 
 const InputGroup = ({ label, value, onChange, isText }: { label: string, value: string | number, onChange: (v: string | number) => void, isText?: boolean }) => (
     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
@@ -16,7 +16,7 @@ const InputGroup = ({ label, value, onChange, isText }: { label: string, value: 
 );
 
 const AdminSettings: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'general' | 'profiles' | 'backing' | 'adapters' | 'profileColors' | 'wheel' | 'leads' | 'members' | 'membershipTypes'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'profiles' | 'backing' | 'adapters' | 'profileColors' | 'members' | 'membershipTypes'>('general');
     const [settings, setSettings] = useState<any>(null);
     const [profiles, setProfiles] = useState<ProfileCost[]>([]);
     const [backing, setBacking] = useState<BackingCost[]>([]);
@@ -25,11 +25,6 @@ const AdminSettings: React.FC = () => {
     // Profile Colors State
     const [profileColors, setProfileColors] = useState<ProfileColor[]>([]);
     const [newColor, setNewColor] = useState<Partial<ProfileColor>>({ name: '', hexCode: '#000000', cmykCode: '' });
-
-    // Wheel & Leads State
-    const [wheelItems, setWheelItems] = useState<SpinWheelItem[]>([]);
-    const [leads, setLeads] = useState<CustomerLead[]>([]);
-    const [newWheelItem, setNewWheelItem] = useState<Partial<SpinWheelItem>>({ label: '', discountPercentage: 10, probability: 10, colorHex: '#ff0000', isLoss: false });
 
     // Membership State
     const [members, setMembers] = useState<any[]>([]);
@@ -52,14 +47,12 @@ const AdminSettings: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const [s, p, b, a, colors, w, l, m, mt] = await Promise.all([
+            const [s, p, b, a, colors, m, mt] = await Promise.all([
                 api.getSystemSettings(),
                 api.getProfileCosts(),
                 api.getBackingCosts(),
                 api.getAdapterPrices(),
                 api.getProfileColors(),
-                api.getWheelConfig(),
-                api.getLeads(),
                 api.getMembers(),
                 api.getMembershipTypes() // Helper needed in api.ts? Or use existing logic? Let's check api.ts
             ]);
@@ -68,8 +61,6 @@ const AdminSettings: React.FC = () => {
             setBacking(b);
             setAdapters(a);
             setProfileColors(colors || []);
-            setWheelItems(w || []);
-            setLeads(l || []);
             setMembers(m || []);
             setMembershipTypes(mt || []); // Assuming we add this call
         } catch (e: any) {
@@ -121,31 +112,6 @@ const AdminSettings: React.FC = () => {
             await api.deleteProfileColor(id);
             await loadAll();
         } catch (e) { alert("Renk silinirken hata oluştu."); }
-    };
-
-    const handleAddWheelItem = async () => {
-        if (!newWheelItem.label) return;
-        try {
-            await api.addWheelItem(newWheelItem);
-            await loadAll();
-            setNewWheelItem({ label: '', discountPercentage: 10, probability: 10, colorHex: '#ff0000', isLoss: false });
-        } catch (e) { alert("Hata oluştu."); }
-    };
-
-    const handleDeleteWheelItem = async (id: number) => {
-        if (!confirm("Silmek istediğinize emin misiniz?")) return;
-        try {
-            await api.deleteWheelItem(id);
-            await loadAll();
-        } catch (e) { alert("Hata oluştu."); }
-    };
-
-    const handleDeleteLead = async (id: number) => {
-        if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
-        try {
-            await api.deleteLead(id);
-            await loadAll();
-        } catch (e) { alert("Hata oluştu."); }
     };
 
     const handleDeleteMember = async (id: number) => {
@@ -261,8 +227,6 @@ const AdminSettings: React.FC = () => {
                     <button onClick={() => setActiveTab('backing')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'backing' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>ZEMİN</button>
                     <button onClick={() => setActiveTab('adapters')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'adapters' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>ADAPTÖRLER</button>
                     <button onClick={() => setActiveTab('profileColors')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'profileColors' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>RENKLER</button>
-                    <button onClick={() => setActiveTab('wheel')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'wheel' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>ÇARK</button>
-                    <button onClick={() => setActiveTab('leads')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'leads' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>ÇEKİLİŞ SONUÇLARI</button>
                     <button onClick={() => setActiveTab('members')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'members' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>ÜYELER</button>
                     <button onClick={() => setActiveTab('membershipTypes')} className={`pb-4 px-4 font-bold text-xs uppercase tracking-widest transition-colors whitespace-nowrap ${activeTab === 'membershipTypes' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}>ÜYELİK TİPLERİ</button>
                 </div>
@@ -468,103 +432,6 @@ const AdminSettings: React.FC = () => {
                                     </button>
                                 </div>
                             ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Wheel Settings */}
-                {activeTab === 'wheel' && (
-                    <div className="space-y-6">
-                        <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl p-6">
-                            <h3 className="text-xs font-black text-purple-500 uppercase tracking-widest mb-4">ÇARK DİLİMİ EKLE</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                                <div className="md:col-span-2">
-                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Etiket</label>
-                                    <input placeholder="Örn: %10 İndirim" value={newWheelItem.label} onChange={e => setNewWheelItem({ ...newWheelItem, label: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:border-purple-500 transition" />
-                                </div>
-                                <div className="md:col-span-1">
-                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Oran (%)</label>
-                                    <input type="number" placeholder="10" value={newWheelItem.discountPercentage} onChange={e => setNewWheelItem({ ...newWheelItem, discountPercentage: Number(e.target.value) })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:border-purple-500 transition" />
-                                </div>
-                                <div className="md:col-span-1">
-                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">İhtimal</label>
-                                    <input type="number" placeholder="20" value={newWheelItem.probability} onChange={e => setNewWheelItem({ ...newWheelItem, probability: Number(e.target.value) })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:border-purple-500 transition" />
-                                </div>
-                                <div className="md:col-span-1 flex items-center gap-2 mb-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={newWheelItem.isLoss}
-                                        onChange={e => setNewWheelItem({ ...newWheelItem, isLoss: e.target.checked })}
-                                        className="w-5 h-5 accent-purple-500"
-                                    />
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">PAS (BOŞ)</label>
-                                </div>
-
-                                <button onClick={handleAddWheelItem} className="bg-purple-600 hover:bg-purple-500 text-white font-black py-3 rounded-xl transition shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 text-xs uppercase tracking-widest">
-                                    <Plus size={16} /> Ekle
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl overflow-hidden">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-white/5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                    <tr>
-                                        <th className="p-4">Etiket</th>
-                                        <th className="p-4">İndirim</th>
-                                        <th className="p-4">İhtimal (Ağırlık)</th>
-                                        <th className="p-4">Durum</th>
-                                        <th className="p-4 text-right">İşlem</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {wheelItems.map(item => (
-                                        <tr key={item.id}>
-                                            <td className="p-4 font-bold text-white">{item.label}</td>
-                                            <td className="p-4 text-emerald-400 font-mono font-bold">%{item.discountPercentage}</td>
-                                            <td className="p-4 text-gray-400">{item.probability}</td>
-                                            <td className="p-4">
-                                                {item.isLoss ? <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded text-[10px] font-black uppercase">BOŞ</span> : <span className="bg-emerald-500/20 text-emerald-500 px-2 py-1 rounded text-[10px] font-black uppercase">KAZANÇ</span>}
-                                            </td>
-                                            <td className="p-4 text-right flex justify-end gap-2">
-                                                <button onClick={() => handleDeleteWheelItem(item.id)} className="text-red-500 hover:text-white transition"><Trash2 size={16} /></button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {/* Leads Data */}
-                {activeTab === 'leads' && (
-                    <div className="space-y-4">
-                        <div className="bg-[#0a0a0c] border border-white/5 rounded-2xl overflow-hidden">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-white/5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                    <tr>
-                                        <th className="p-4">Tarih</th>
-                                        <th className="p-4">Telefon</th>
-                                        <th className="p-4">Kazanılan</th>
-                                        <th className="p-4">İndirim Kodu</th>
-                                        <th className="p-4 text-right">İşlem</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {leads.map(lead => (
-                                        <tr key={lead.id}>
-                                            <td className="p-4 text-gray-500 font-mono text-xs">{new Date(lead.createdAt).toLocaleString('tr-TR')}</td>
-                                            <td className="p-4 font-bold text-white">{lead.phoneNumber}</td>
-                                            <td className="p-4 text-purple-400 font-bold">{lead.wonPrizeLabel}</td>
-                                            <td className="p-4 text-emerald-400 font-mono font-bold tracking-widest">{lead.discountCode || '-'}</td>
-                                            <td className="p-4 text-right">
-                                                <button onClick={() => handleDeleteLead(lead.id)} className="text-red-500 hover:text-white transition"><Trash2 size={16} /></button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 )}

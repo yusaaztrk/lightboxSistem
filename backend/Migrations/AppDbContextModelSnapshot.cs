@@ -497,7 +497,15 @@ namespace LightboxBackend.Migrations
                     b.Property<decimal>("ProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ScrollingMessage")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("StandPrice")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WhatsAppNumber")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -522,7 +530,9 @@ namespace LightboxBackend.Migrations
                             PrintCostPerM2 = 10.00m,
                             ProfileCostsJson = "[]",
                             ProfitMarginPercentage = 30.0m,
-                            StandPrice = 50.0m
+                            ScrollingMessage = "Hoş geldiniz! En uygun fiyatlı Lightbox çözümleri burada.",
+                            StandPrice = 50.0m,
+                            WhatsAppNumber = "905000000000"
                         });
                 });
 

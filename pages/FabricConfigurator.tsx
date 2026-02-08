@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-import { Box, ShoppingBag, Upload, Eye, EyeOff, LayoutGrid, Settings, Sparkles, Gift } from 'lucide-react';
+import { Box, ShoppingBag, Upload, Eye, EyeOff, LayoutGrid, Settings, Sparkles } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -17,13 +17,11 @@ import PublicHeader from '../components/PublicHeader';
 import { api } from '../services/api';
 import { addCartItem } from '../services/cart';
 
-import OrderModal, { CustomerData } from '../components/OrderModal';
-
-import LuckyWheel from '../components/LuckyWheel';
-
 import MembershipModal from '../components/MembershipModal';
 
 import { User } from 'lucide-react';
+
+import { compressImageToThumbnail } from '../utils/imageCompression';
 
 
 
@@ -33,7 +31,12 @@ const loadFabricCache = (): ConfigOptions | null => {
     try {
         const raw = localStorage.getItem(FABRIC_CONFIG_CACHE);
         if (!raw) return null;
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+            delete parsed.userImageUrl;
+            delete parsed.backImageUrl;
+        }
+        return parsed;
     } catch { return null; }
 };
 
@@ -47,11 +50,9 @@ const FabricConfigurator: React.FC = () => {
 
     const [availableColors, setAvailableColors] = useState<ProfileColor[]>([]);
 
-    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-
     const [selectedScene, setSelectedScene] = useState<MockupScene | null>(null);
 
-    const [isWheelOpen, setIsWheelOpen] = useState(false);
+    const [cameraOffset, setCameraOffset] = useState({ x: 0, y: 0, z: 0 });
 
     const [isMembershipOpen, setIsMembershipOpen] = useState(false);
 
@@ -199,49 +200,14 @@ const FabricConfigurator: React.FC = () => {
 
         setConfig(prev => {
             const next = { ...prev, [key]: value };
-            try { localStorage.setItem(FABRIC_CONFIG_CACHE, JSON.stringify(next)); } catch { }
+            try {
+                const cacheNext: any = { ...next };
+                delete cacheNext.userImageUrl;
+                delete cacheNext.backImageUrl;
+                localStorage.setItem(FABRIC_CONFIG_CACHE, JSON.stringify(cacheNext));
+            } catch { }
             return next;
         });
-
-    };
-
-
-
-    const handleOrderSubmit = async (customerData: CustomerData) => {
-
-        // ...
-
-        const order = {
-
-            customerName: customerData.fullName,
-
-            customerPhone: customerData.phone,
-
-            dimensions: `${config.width}x${config.height}`,
-
-            price: customerData.discountedPrice ?? finalPrice,
-
-            configurationDetails: JSON.stringify({ ...config, type: 'FABRIC_ONLY', note: customerData.note }),
-
-            status: 'Pending'
-
-        };
-
-
-
-        try {
-
-            const created = await api.createOrder(order);
-
-            setIsOrderModalOpen(false);
-
-            navigate(`/order/${created.id}`);
-
-        } catch (error) {
-
-            alert("Hata oluştu.");
-
-        }
 
     };
 
@@ -250,8 +216,6 @@ const FabricConfigurator: React.FC = () => {
     return (
 
         <div className="public-app min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] font-sans flex flex-col md:flex-row">
-
-            <LuckyWheel isOpen={isWheelOpen} onClose={() => setIsWheelOpen(false)} />
 
 
 
@@ -269,8 +233,6 @@ const FabricConfigurator: React.FC = () => {
 
                     price={finalPrice}
 
-                    onOpenWheel={() => setIsWheelOpen(true)}
-
                     onOpenMember={() => setIsMembershipOpen(true)}
 
                     activePage="fabric"
@@ -281,50 +243,72 @@ const FabricConfigurator: React.FC = () => {
 
                 {/* 3D Box */}
 
-                <div className="flex-1 relative min-h-[450px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-2xl bg-[var(--app-surface)]">
+                <div className="relative h-[300px] md:h-[800px] md:min-h-[600px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-2xl bg-[var(--app-surface)]">
 
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.1),transparent)] pointer-events-none" />
 
                     {/* Use Lightbox3D */}
 
-                    <Lightbox3D config={{ ...config, depth: 5 }} isMockupMode={false} />
+                    <Lightbox3D config={{ ...config, depth: 5 }} isMockupMode={false} cameraOffset={cameraOffset} />
 
+                </div>
 
-
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 p-2.5 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl z-20">
-
+                <div className="mt-4 flex justify-center">
+                    <div className="flex gap-3 p-2.5 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl">
                         <div className="px-6 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-300 border border-white/5 flex items-center">
-
                             Önizleme Modu
-
                         </div>
 
                         <button
-
+                            type="button"
                             onClick={() => updateConfig('isLightOn', !config.isLightOn)}
-
                             className={`flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black transition-all ${config.isLightOn ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
                         >
-
                             <Sparkles className={`w-3 h-3 ${config.isLightOn ? 'fill-yellow-400' : ''}`} /> {config.isLightOn ? 'IŞIK AÇIK' : 'IŞIK KAPALI'}
-
                         </button>
 
                         <button
-
+                            type="button"
                             onClick={() => updateConfig('hasFeet', !config.hasFeet)}
-
                             className={`flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black transition-all ${config.hasFeet ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
                         >
-
                             <Box className="w-3 h-3" /> {config.hasFeet ? 'AYAKLI MOD' : 'DUVAR MONTAJ'}
-
                         </button>
-
                     </div>
+                </div>
 
+                <div className="mt-6 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-3">
+                    <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-2">KAMERA</div>
+
+                    <input
+                        type="range"
+                        min={-2}
+                        max={2}
+                        step={0.01}
+                        value={cameraOffset.y}
+                        onChange={e => setCameraOffset(prev => ({ ...prev, y: Number(e.target.value) }))}
+                        className="w-full"
+                    />
+
+                    <input
+                        type="range"
+                        min={-2}
+                        max={2}
+                        step={0.01}
+                        value={cameraOffset.x}
+                        onChange={e => setCameraOffset(prev => ({ ...prev, x: Number(e.target.value) }))}
+                        className="w-full mt-2"
+                    />
+
+                    <input
+                        type="range"
+                        min={-5}
+                        max={5}
+                        step={0.01}
+                        value={cameraOffset.z}
+                        onChange={e => setCameraOffset(prev => ({ ...prev, z: Number(e.target.value) }))}
+                        className="w-full mt-2"
+                    />
                 </div>
 
 
@@ -349,7 +333,7 @@ const FabricConfigurator: React.FC = () => {
 
                     </div>
 
-                    <div className="grid grid-cols-5 gap-5">
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-4 md:gap-5">
 
                         {MOCKUP_SCENES.map((scene) => (
 
@@ -359,7 +343,7 @@ const FabricConfigurator: React.FC = () => {
 
                                 onClick={() => setSelectedScene(scene)}
 
-                                className={`group relative h-32 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
+                                className={`group relative h-36 md:h-32 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
 
                             >
 
@@ -571,45 +555,68 @@ const FabricConfigurator: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                         <button
-                            onClick={() => {
+                            onClick={async () => {
+                                const widthM = config.width / 100;
+                                const heightM = config.height / 100;
+                                const areaM2 = widthM * heightM;
+                                const printMultiplier = config.profile === ProfileType.DOUBLE ? 2 : 1;
+                                const printCost = areaM2 * (factors.pricePerSqMeterPrinting || 0) * printMultiplier;
+                                const standCost = config.hasFeet ? (factors.standPrice || 0) : 0;
+                                const rawMaterialTotal = printCost + standCost;
+                                const profitMargin = finalPrice - rawMaterialTotal;
+
+                                const breakdown = {
+                                    profileCost: 0,
+                                    backingCost: 0,
+                                    printCost,
+                                    ledCost: 0,
+                                    adapterCost: 0,
+                                    cableCost: 0,
+                                    cornerPieceCost: 0,
+                                    standCost,
+                                    rawMaterialTotal,
+                                    laborCost: 0,
+                                    laboredTotal: rawMaterialTotal,
+                                    profitMargin,
+                                    finalPrice,
+                                    selectedLayout: { direction: 'Horizontal', stripCount: 0, stripLength: 0, totalLedMeters: 0, totalCost: 0 },
+                                    alternativeLayout: { direction: 'Horizontal', stripCount: 0, stripLength: 0, totalLedMeters: 0, totalCost: 0 },
+                                    adapterName: '-',
+                                    requiredAmperes: 0,
+                                    selectedAmperes: 0,
+                                    perimeter: (widthM + heightM) * 2,
+                                    areaM2,
+                                };
+
+                                let thumbnailUrl = config.userImageUrl || undefined;
+                                if (config.userImageUrl) {
+                                    try {
+                                        thumbnailUrl = await compressImageToThumbnail(config.userImageUrl, 200, 200, 0.6);
+                                    } catch { }
+                                }
+
                                 addCartItem({
                                     type: 'fabric',
                                     title: `Kumaş ${config.width}x${config.height} cm`,
                                     price: finalPrice,
                                     configurationDetails: JSON.stringify({ ...config, type: 'FABRIC_ONLY' }),
-                                    previewImageUrl: config.userImageUrl || undefined,
+                                    costDetails: JSON.stringify(breakdown),
+                                    previewImageUrl: thumbnailUrl,
                                 });
-                                alert('Sepete eklendi!');
+
+                                try { localStorage.removeItem(FABRIC_CONFIG_CACHE); } catch { }
+                                setConfig({ ...DEFAULT_CONFIG, depth: 0 });
+                                try { window.dispatchEvent(new Event('open-cart-drawer')); } catch { }
                             }}
                             className="w-full bg-white/5 border border-white/10 text-white font-black py-4 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center gap-2 shadow-xl uppercase tracking-widest text-xs active:scale-[0.98]"
                         >
                             <ShoppingBag className="w-4 h-4" /> SEPETE EKLE
-                        </button>
-                        <button onClick={() => setIsOrderModalOpen(true)} className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl hover:bg-emerald-500 transition shadow-xl shadow-emerald-600/20 active:scale-[0.98] uppercase tracking-wider flex items-center justify-center gap-2 text-xs">
-                            <ShoppingBag className="w-4 h-4" /> SİPARİŞ OLUŞTUR
                         </button>
                     </div>
 
                 </div>
 
             </div>
-
-
-
-            <OrderModal
-
-                isOpen={isOrderModalOpen}
-
-                onClose={() => setIsOrderModalOpen(false)}
-
-                onSubmit={handleOrderSubmit}
-
-                finalPrice={finalPrice}
-
-            />
-
-
-
             {selectedScene && <MockupViewer config={config} scene={selectedScene} onClose={() => setSelectedScene(null)} />}
 
         </div>

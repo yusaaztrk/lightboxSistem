@@ -54,4 +54,8 @@ public class SystemSettings
     
     [Obsolete("LED spacing is now calculated automatically")]
     public string LedSpacingOptionsJson { get; set; } = "[15]";
+
+    // --- ÖZEL İÇERİKLER ---
+    public string WhatsAppNumber { get; set; } = "905000000000";
+    public string ScrollingMessage { get; set; } = "Hoş geldiniz! En uygun fiyatlı Lightbox çözümleri burada.";
 }

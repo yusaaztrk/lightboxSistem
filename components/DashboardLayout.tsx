@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Settings, LogOut, Bell, Search, Globe, ChevronDown, User,
-    Layers, Palette, Disc, Users, Database, Zap
+    Layers, Palette, Users, Database, Zap, Tag
 } from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {
@@ -11,13 +11,15 @@ const DashboardLayout: React.FC = () => {
 
     React.useEffect(() => {
         const isAuth = localStorage.getItem('isAdminAuthenticated');
-        if (!isAuth) {
+        const token = localStorage.getItem('adminToken');
+        if (!isAuth || !token) {
             navigate('/login');
         }
     }, [navigate]);
 
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
+        localStorage.removeItem('adminToken');
         navigate('/login');
     };
 
@@ -65,9 +67,9 @@ const DashboardLayout: React.FC = () => {
                         <Palette className="w-5 h-5" />
                         <span>Renkler</span>
                     </NavLink>
-                    <NavLink to="/admin/wheel" className={navItemClass}>
-                        <Disc className="w-5 h-5" />
-                        <span>Çark & Çekiliş</span>
+                    <NavLink to="/admin/discount-codes" className={navItemClass}>
+                        <Tag className="w-5 h-5" />
+                        <span>İndirim Kodları</span>
                     </NavLink>
                     <NavLink to="/admin/members" className={navItemClass}>
                         <Users className="w-5 h-5" />

@@ -9,11 +9,41 @@ const CustomerOrderPage: React.FC = () => {
     const navigate = useNavigate();
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!id) return;
-        api.getOrder(id)
+        setLoading(true);
+        setError(null);
+
+        let code = '';
+        try {
+            const params = new URLSearchParams(window.location.search);
+            code = params.get('code') || '';
+
+            if (!code) {
+                const raw = sessionStorage.getItem('lightbox_order_access_codes');
+                if (raw) {
+                    const map = JSON.parse(raw);
+                    const stored = map?.[Number(id)];
+                    if (typeof stored === 'string') code = stored;
+                }
+            }
+        } catch { }
+
+        if (!code) {
+            setOrder(null);
+            setError('Bu siparişi görüntülemek için erişim kodu gereklidir.');
+            setLoading(false);
+            return;
+        }
+
+        api.getOrderPublic(id, code)
             .then(setOrder)
+            .catch((e: any) => {
+                setOrder(null);
+                setError(typeof e?.response?.data === 'string' ? e.response.data : 'Sipariş görüntülenemedi.');
+            })
             .finally(() => setLoading(false));
     }, [id]);
 
@@ -34,8 +64,17 @@ const CustomerOrderPage: React.FC = () => {
         return { config: parsedConfig, breakdown: parsedBreakdown };
     }, [order]);
 
+    const discountMeta = useMemo(() => {
+        try {
+            const c: any = config as any;
+            return c?.discount || null;
+        } catch {
+            return null;
+        }
+    }, [config]);
+
     if (loading) return <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] flex items-center justify-center font-bold">Yükleniyor...</div>;
-    if (!order) return <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] flex items-center justify-center font-bold">Sipariş bulunamadı.</div>;
+    if (!order) return <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] flex items-center justify-center font-bold">{error || 'Sipariş bulunamadı.'}</div>;
 
     return (
         <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] font-sans p-6 md:p-10">
@@ -69,6 +108,29 @@ const CustomerOrderPage: React.FC = () => {
                             <div className="text-3xl font-black text-emerald-400">${order.price.toFixed(2)}</div>
                         </div>
                     </div>
+
+                    {discountMeta && typeof discountMeta === 'object' && (
+                        <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl p-4">
+                            <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest">İndirim</div>
+                            <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className="bg-black/20 border border-white/10 rounded-xl p-3">
+                                    <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Eski</div>
+                                    <div className="mt-1 font-black text-white">${Number(discountMeta.from || 0).toFixed(2)}</div>
+                                </div>
+                                <div className="bg-black/20 border border-white/10 rounded-xl p-3">
+                                    <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest">İndirim</div>
+                                    <div className="mt-1 font-black text-red-400">-%{Number(discountMeta.percentage || 0)} (${Number(discountMeta.amount || 0).toFixed(2)})</div>
+                                    {discountMeta.code ? (
+                                        <div className="text-[10px] text-gray-400 font-bold mt-1">Kod: {String(discountMeta.code)}</div>
+                                    ) : null}
+                                </div>
+                                <div className="bg-black/20 border border-white/10 rounded-xl p-3">
+                                    <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Yeni</div>
+                                    <div className="mt-1 font-black text-emerald-400">${Number(discountMeta.to || 0).toFixed(2)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">

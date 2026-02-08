@@ -13,18 +13,11 @@ const LandingPage: React.FC = () => {
                 <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-emerald-600/10 blur-[150px] rounded-full" />
             </div>
 
-            <div className="absolute top-6 right-6 z-20">
-                <button onClick={() => navigate('/admin')} className="p-3 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition backdrop-blur-md">
-                    <Settings className="w-5 h-5 text-gray-400" />
-                </button>
-            </div>
+
 
             <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
                 <div className="text-center mb-16 space-y-4">
-                    <div className="inline-flex items-center gap-3 bg-white/5 border border-white/5 px-6 py-2 rounded-full mb-4 backdrop-blur-md">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Sistem Hazır v10.0</span>
-                    </div>
+
                     <img src="/logo_new.png" alt="Lightbox Master" className="h-24 md:h-32 mx-auto mb-6 object-contain rounded-2xl" />
                     <p className="text-gray-500 text-sm md:text-base font-bold uppercase tracking-widest max-w-lg mx-auto">
                         Gelişmiş Fiyatlandırma ve Tasarım Motoru

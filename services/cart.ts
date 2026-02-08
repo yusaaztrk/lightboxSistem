@@ -9,6 +9,7 @@ export interface CartItem {
   configurationDetails: string;
   costDetails?: string;
   previewImageUrl?: string;
+  note?: string;
 }
 
 const STORAGE_KEY = 'lightbox_cart_v1';
@@ -31,8 +32,31 @@ const readCart = (): CartItem[] => {
 
 const writeCart = (items: CartItem[]) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  listeners.forEach(l => l());
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    listeners.forEach(l => l());
+  } catch (error) {
+    // Handle quota exceeded error
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('LocalStorage quota exceeded. Removing preview images...');
+      // Remove preview images to save space
+      const itemsWithoutImages = items.map(item => ({
+        ...item,
+        previewImageUrl: undefined
+      }));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(itemsWithoutImages));
+        listeners.forEach(l => l());
+        alert('Sepete eklendi! (Görsel önizleme kaydedilemedi - depolama alanı dolu)');
+      } catch (retryError) {
+        console.error('Failed to save cart even without images:', retryError);
+        alert('Sepete eklenemedi - depolama alanı dolu. Lütfen tarayıcı önbelleğinizi temizleyin.');
+      }
+    } else {
+      console.error('Failed to save cart:', error);
+      alert('Sepete eklenirken bir hata oluştu.');
+    }
+  }
 };
 
 export const getCartItems = () => readCart();
@@ -56,8 +80,20 @@ export const removeCartItem = (id: string) => {
   writeCart(items);
 };
 
+export const updateCartItemNote = (id: string, note: string) => {
+  const items = readCart().map(i => (i.id === id ? { ...i, note } : i));
+  writeCart(items);
+};
+
 export const clearCart = () => {
-  writeCart([]);
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    listeners.forEach(l => l());
+  } catch {
+    // fallback
+    writeCart([]);
+  }
 };
 
 export const subscribeCart = (listener: Listener) => {

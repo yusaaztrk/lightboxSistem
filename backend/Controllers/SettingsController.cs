@@ -47,28 +47,11 @@ public class SettingsController : ControllerBase
         }
         else
         {
-            // Partial update - only update fields that are explicitly set (non-default)
-            var props = typeof(SystemSettings).GetProperties()
-                .Where(p => p.Name != "Id" && p.CanWrite);
+            // Robust update using EF SetValues
+            _context.Entry(existing).CurrentValues.SetValues(settings);
             
-            foreach (var prop in props)
-            {
-                var newVal = prop.GetValue(settings);
-                var defaultVal = prop.PropertyType.IsValueType 
-                    ? Activator.CreateInstance(prop.PropertyType) 
-                    : null;
-                
-                // For bool, we need special handling since false IS a valid value
-                if (prop.PropertyType == typeof(bool))
-                {
-                    // Always update booleans from the request
-                    prop.SetValue(existing, newVal);
-                }
-                else if (newVal != null && !newVal.Equals(defaultVal))
-                {
-                    prop.SetValue(existing, newVal);
-                }
-            }
+            // Explicitly force Id=1 to prevent accidental changes
+            existing.Id = 1;
         }
 
         await _context.SaveChangesAsync();

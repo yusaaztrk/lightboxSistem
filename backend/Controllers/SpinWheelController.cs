@@ -89,97 +89,111 @@ public class SpinWheelController : ControllerBase
     [HttpPost("spin")]
     public async Task<IActionResult> Spin([FromBody] SpinRequest request)
     {
-        // Check if wheel is enabled
-        var settings = await _context.Settings.FirstOrDefaultAsync();
-        if (settings != null && !settings.IsWheelEnabled)
-            return BadRequest("Şans çarkı şu anda devre dışıdır.");
-
-        var phone = NormalizePhone(request.PhoneNumber);
-        if (string.IsNullOrEmpty(phone))
-            return BadRequest("Telefon numarası gereklidir.");
-
-        // Check for existing participation
-        if (await _context.Leads.AnyAsync(l => l.PhoneNumber == phone))
+        Console.WriteLine($"[SPIN API] ========== REQUEST RECEIVED ==========");
+        Console.WriteLine($"[SPIN API] Phone: {request?.PhoneNumber}");
+        
+        try
         {
-            return BadRequest("Bu numara ile daha önce katılım sağlanmış!");
-        }
+            // Check if wheel is enabled
+            var settings = await _context.Settings.FirstOrDefaultAsync();
+            Console.WriteLine($"[SPIN API] Wheel enabled: {settings?.IsWheelEnabled}");
+            if (settings != null && !settings.IsWheelEnabled)
+                return BadRequest("Şans çarkı şu anda devre dışıdır.");
 
-        // 1. Get Setup
-        var items = await _context.SpinWheelItems.ToListAsync();
-        if (items.Count == 0) return BadRequest("Çark ayarları yapılmamış.");
+            var phone = NormalizePhone(request.PhoneNumber);
+            Console.WriteLine($"[SPIN API] Normalized phone: {phone}");
+            if (string.IsNullOrEmpty(phone))
+                return BadRequest("Telefon numarası gereklidir.");
 
-        // 2. Calculate Winner
-        // Weighted random selection
-        var totalWeight = items.Sum(i => i.Probability);
-        var rand = new Random();
-        var roll = rand.NextDouble() * totalWeight;
-
-        SpinWheelItem wonItem = null;
-        double currentWeight = 0;
-        foreach (var item in items)
-        {
-            currentWeight += item.Probability;
-            if (roll <= currentWeight)
+            // Check for existing participation
+            var existingLead = await _context.Leads.AnyAsync(l => l.PhoneNumber == phone);
+            Console.WriteLine($"[SPIN API] Existing lead: {existingLead}");
+            if (existingLead)
             {
-                wonItem = item;
-                break;
+                return BadRequest("Bu numara ile daha önce katılım sağlanmış!");
             }
+
+            // 1. Get Setup
+            var items = await _context.SpinWheelItems.ToListAsync();
+            Console.WriteLine($"[SPIN API] Items count: {items.Count}");
+            if (items.Count == 0) return BadRequest("Çark ayarları yapılmamış.");
+
+            // 2. Calculate Winner
+            var totalWeight = items.Sum(i => i.Probability);
+            var rand = new Random();
+            var roll = rand.NextDouble() * totalWeight;
+
+            SpinWheelItem wonItem = null;
+            double currentWeight = 0;
+            foreach (var item in items)
+            {
+                currentWeight += item.Probability;
+                if (roll <= currentWeight)
+                {
+                    wonItem = item;
+                    break;
+                }
+            }
+            if (wonItem == null) wonItem = items.Last();
+            Console.WriteLine($"[SPIN API] Won item: {wonItem.Label}");
+
+            // 3. Generate Code if not loss
+            string code = "";
+            if (!wonItem.IsLoss)
+            {
+                code = "LUCKY" + rand.Next(1000, 9999);
+            }
+            Console.WriteLine($"[SPIN API] Discount code: {code}");
+
+            // 4. Save Lead
+            var lead = new CustomerLead
+            {
+                PhoneNumber = phone,
+                WonPrizeLabel = wonItem.Label,
+                DiscountCode = code,
+                DiscountPercentage = (!wonItem.IsLoss && wonItem.DiscountPercentage > 0) ? wonItem.DiscountPercentage : 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Leads.Add(lead);
+            await _context.SaveChangesAsync();
+            Console.WriteLine($"[SPIN API] Lead saved to database");
+
+            var response = new { 
+                wonItemId = wonItem.Id, 
+                wonLabel = wonItem.Label, 
+                discountCode = code,
+                isLoss = wonItem.IsLoss 
+            };
+            Console.WriteLine($"[SPIN API] Returning OK response");
+            Console.WriteLine($"[SPIN API] ========== REQUEST COMPLETED ==========");
+            return Ok(response);
         }
-        if (wonItem == null) wonItem = items.Last(); // Fallback
-
-        // 3. Generate Code if not loss
-        string code = "";
-        if (!wonItem.IsLoss)
+        catch (Exception ex)
         {
-            code = "LUCKY" + rand.Next(1000, 9999);
+            Console.WriteLine($"[SPIN API] ❌ ERROR: {ex.Message}");
+            Console.WriteLine($"[SPIN API] Stack trace: {ex.StackTrace}");
+            return StatusCode(500, "Sunucu hatası oluştu.");
         }
-
-        // 4. Save Lead
-        var lead = new CustomerLead
-        {
-            PhoneNumber = phone,
-            WonPrizeLabel = wonItem.Label,
-            DiscountCode = code,
-            DiscountPercentage = (!wonItem.IsLoss && wonItem.DiscountPercentage > 0) ? wonItem.DiscountPercentage : 0,
-            CreatedAt = DateTime.UtcNow
-        };
-        _context.Leads.Add(lead);
-        await _context.SaveChangesAsync();
-
-        return Ok(new { 
-            wonItemId = wonItem.Id, 
-            wonLabel = wonItem.Label, 
-            discountCode = code,
-            isLoss = wonItem.IsLoss 
-        });
     }
 
     // --- VALIDATION ---
     public class ValidateRequest
     {
         public string Code { get; set; }
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
     }
 
     [HttpPost("validate")]
     public async Task<IActionResult> ValidateCode([FromBody] ValidateRequest request)
     {
         if (string.IsNullOrEmpty(request.Code)) return BadRequest("Kod boş olamaz.");
-        if (string.IsNullOrEmpty(request.PhoneNumber)) return BadRequest("Telefon numarası gereklidir.");
-
-        var phone = NormalizePhone(request.PhoneNumber);
-        if (string.IsNullOrEmpty(phone)) return BadRequest("Telefon numarası gereklidir.");
-
-        var lead = await _context.Leads.FirstOrDefaultAsync(l => l.DiscountCode == request.Code && !l.IsUsed);
+        var code = request.Code.Trim().ToUpperInvariant();
+        var lead = await _context.Leads.FirstOrDefaultAsync(l => l.DiscountCode == code);
         
         if (lead == null)
             return BadRequest("Geçersiz veya kullanılmış kod.");
-
-        // Normalize phones for comparison (strip spaces etc if needed, but for now exact match)
-        if (NormalizePhone(lead.PhoneNumber) != phone)
-            return BadRequest("Bu kod başka bir numaraya tanımlıdır.");
         
-        return Ok(new { percentage = lead.DiscountPercentage, owner = lead.PhoneNumber });
+        return Ok(new { percentage = lead.DiscountPercentage, owner = lead.WonPrizeLabel });
     }
 
     // --- DATA ---

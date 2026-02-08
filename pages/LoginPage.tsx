@@ -12,7 +12,11 @@ const LoginPage: React.FC = () => {
         e.preventDefault();
         try {
             // Using the new API endpoint
-            await api.adminLogin({ username, password });
+            const res = await api.adminLogin({ username, password });
+            const token = (res as any)?.data?.token;
+            if (token) {
+                try { localStorage.setItem('adminToken', token); } catch { }
+            }
 
             // Set simple auth flag
             localStorage.setItem('isAdminAuthenticated', 'true');

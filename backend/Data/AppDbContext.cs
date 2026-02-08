@@ -42,7 +42,9 @@ public class AppDbContext : DbContext
             LedOutdoorPricePerMeter = 3.00m, // (Adet 1.5$) * 2
             PrintCostPerM2 = 10.00m,
             LaborRatePercentage = 30.0m,
-            ProfitMarginPercentage = 30.0m
+            ProfitMarginPercentage = 30.0m,
+            WhatsAppNumber = "905000000000",
+            ScrollingMessage = "Hoş geldiniz! En uygun fiyatlı Lightbox çözümleri burada."
         });
 
         // Seed MembershipTypes

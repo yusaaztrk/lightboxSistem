@@ -64,12 +64,12 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
         setIsValidating(true);
         setDiscountError('');
         try {
-            const result = await import('../services/api').then(m => m.api.validateCode(discountCode, normalizePhone(formData.phone)));
+            const result = await import('../services/api').then(m => m.api.validateDiscountCode(discountCode, normalizePhone(formData.phone)));
             setAppliedDiscount(result);
         } catch (error: any) {
             setAppliedDiscount(null);
             if (error.response && error.response.data) {
-                setDiscountError(typeof error.response.data === 'string' ? error.response.data : 'Geçersiz kod veya numara hatası.');
+                setDiscountError(typeof error.response.data === 'string' ? error.response.data : 'Geçersiz kod veya hata.');
             } else {
                 setDiscountError('Geçersiz veya kullanılmış kod.');
             }
