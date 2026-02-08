@@ -43,9 +43,19 @@ interface Props {
 
 
 
+const LIGHTBOX_CONFIG_CACHE = 'lightbox_config_cache';
+
+const loadCachedConfig = (): ConfigOptions | null => {
+    try {
+        const raw = localStorage.getItem(LIGHTBOX_CONFIG_CACHE);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch { return null; }
+};
+
 const LightboxConfigurator: React.FC<Props> = () => {
 
-    const [config, setConfig] = useState<ConfigOptions>(DEFAULT_CONFIG);
+    const [config, setConfig] = useState<ConfigOptions>(() => loadCachedConfig() || DEFAULT_CONFIG);
 
     const [factors, setFactors] = useState<PricingFactors>(INITIAL_PRICING);
 
@@ -54,6 +64,11 @@ const LightboxConfigurator: React.FC<Props> = () => {
     const [selectedScene, setSelectedScene] = useState<MockupScene | null>(null);
 
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+
+    // Save config to localStorage on change
+    useEffect(() => {
+        try { localStorage.setItem(LIGHTBOX_CONFIG_CACHE, JSON.stringify(config)); } catch { }
+    }, [config]);
 
 
 
@@ -297,7 +312,7 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
             dimensions: `${config.width}x${config.height}`,
 
-            price: breakdown.finalPrice,
+            price: customerData.discountedPrice ?? breakdown.finalPrice,
 
             configurationDetails: JSON.stringify({ ...config, note: customerData.note }),
 
@@ -772,213 +787,93 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
             <div className="public-app">
 
-            <LuckyWheel isOpen={isWheelOpen} onClose={() => setIsWheelOpen(false)} />
+                <LuckyWheel isOpen={isWheelOpen} onClose={() => setIsWheelOpen(false)} />
 
-            <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />
-
-
-
-            {/* Floating Operations REMOVED (Moved to Header) */}
+                <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />
 
 
 
-            <div className="md:hidden min-h-screen w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-y-auto overflow-x-hidden">
-
-                <div className="p-4">
-
-                    <PublicHeader
-
-                        price={breakdown?.finalPrice || 0}
-
-                        onOpenWheel={() => setIsWheelOpen(true)}
-
-                        onOpenMember={() => setIsMembershipOpen(true)}
-
-                        activePage="lightbox"
-
-                    />
-
-                </div>
+                {/* Floating Operations REMOVED (Moved to Header) */}
 
 
 
-                <div className="px-4">
+                <div className="md:hidden min-h-screen w-full bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-y-auto overflow-x-hidden">
 
-                    <div className="relative h-[300px] w-full rounded-3xl overflow-hidden border border-white/5 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]">
+                    <div className="p-4">
 
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.08),transparent)] pointer-events-none" />
+                        <PublicHeader
 
-                        <Lightbox3D config={config} isMockupMode={false} />
+                            price={breakdown?.finalPrice || 0}
 
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-1.5 bg-black/60 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl z-20">
+                            onOpenWheel={() => setIsWheelOpen(true)}
 
-                            <button onClick={() => updateConfig('viewMode', 'finish')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.viewMode === 'finish' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500'}`}>
+                            onOpenMember={() => setIsMembershipOpen(true)}
 
-                                <Eye className="w-3 h-3" /> ATÖLYE
+                            activePage="lightbox"
 
-                            </button>
-
-                            <button onClick={() => updateConfig('viewMode', 'technical')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.viewMode === 'technical' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500'}`}>
-
-                                <EyeOff className="w-3 h-3" /> TEKNİK
-
-                            </button>
-
-                            <button
-
-                                onClick={() => updateConfig('isLightOn', !config.isLightOn)}
-
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.isLightOn ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
-                            >
-
-                                <Sparkles className={`w-3 h-3 ${config.isLightOn ? 'fill-yellow-400' : ''}`} /> {config.isLightOn ? 'IŞIK AÇIK' : 'IŞIK KAPALI'}
-
-                            </button>
-
-                            <button
-
-                                onClick={() => updateConfig('hasFeet', !config.hasFeet)}
-
-                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.hasFeet ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
-                            >
-
-                                <Box className="w-3 h-3" /> {config.hasFeet ? 'AYAKLI MOD' : 'DUVAR MONTAJ'}
-
-                            </button>
-
-                        </div>
+                        />
 
                     </div>
 
-                </div>
 
 
+                    <div className="px-4">
 
-                <div className="bg-[var(--app-surface)] border-t border-[var(--app-border)] mt-8">
+                        <div className="relative h-[300px] w-full rounded-3xl overflow-hidden border border-white/5 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]">
 
-                    <SettingsPanelContent />
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.08),transparent)] pointer-events-none" />
 
-                </div>
+                            <Lightbox3D config={config} isMockupMode={false} />
 
-            </div>
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-1.5 bg-black/60 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl z-20">
 
+                                <button onClick={() => updateConfig('viewMode', 'finish')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.viewMode === 'finish' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500'}`}>
 
+                                    <Eye className="w-3 h-3" /> ATÖLYE
 
-            <div className="hidden md:flex h-screen w-screen bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden">
+                                </button>
 
-                <div className="flex-1 relative p-8 flex flex-col overflow-y-auto custom-scrollbar">
+                                <button onClick={() => updateConfig('viewMode', 'technical')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.viewMode === 'technical' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500'}`}>
 
-                    <PublicHeader
+                                    <EyeOff className="w-3 h-3" /> TEKNİK
 
-                        price={breakdown?.finalPrice || 0}
+                                </button>
 
-                        onOpenWheel={() => setIsWheelOpen(true)}
+                                <button
 
-                        onOpenMember={() => setIsMembershipOpen(true)}
+                                    onClick={() => updateConfig('isLightOn', !config.isLightOn)}
 
-                        activePage="lightbox"
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.isLightOn ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-white'}`}
 
-                    />
+                                >
 
+                                    <Sparkles className={`w-3 h-3 ${config.isLightOn ? 'fill-yellow-400' : ''}`} /> {config.isLightOn ? 'IŞIK AÇIK' : 'IŞIK KAPALI'}
 
+                                </button>
 
-                    <div className="relative h-[550px] min-h-[450px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+                                <button
 
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.08),transparent)] pointer-events-none" />
+                                    onClick={() => updateConfig('hasFeet', !config.hasFeet)}
 
-                        <Lightbox3D config={config} isMockupMode={false} />
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.hasFeet ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'text-gray-500 hover:text-white'}`}
 
-                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 p-2.5 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl z-20">
+                                >
 
-                            <button onClick={() => updateConfig('viewMode', 'finish')} className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.viewMode === 'finish' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500 hover:text-white'}`}>
+                                    <Box className="w-3 h-3" /> {config.hasFeet ? 'AYAKLI MOD' : 'DUVAR MONTAJ'}
 
-                                <Eye className="w-4 h-4" /> ATÖLYE GÖRÜNÜMÜ
-
-                            </button>
-
-                            <button onClick={() => updateConfig('viewMode', 'technical')} className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.viewMode === 'technical' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500 hover:text-white'}`}>
-
-                                <EyeOff className="w-4 h-4" /> TEKNİK ŞEMA
-
-                            </button>
-
-                            <button
-
-                                onClick={() => updateConfig('isLightOn', !config.isLightOn)}
-
-                                className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.isLightOn ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
-                            >
-
-                                <Sparkles className={`w-4 h-4 ${config.isLightOn ? 'fill-yellow-400' : ''}`} /> {config.isLightOn ? 'IŞIK AÇIK' : 'IŞIK KAPALI'}
-
-                            </button>
-
-                            <button
-
-                                onClick={() => updateConfig('hasFeet', !config.hasFeet)}
-
-                                className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.hasFeet ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'text-gray-500 hover:text-white'}`}
-
-                            >
-
-                                <Box className="w-4 h-4" /> {config.hasFeet ? 'AYAKLI MOD' : 'DUVAR MONTAJ'}
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <div className="mt-14 mb-10 px-4">
-
-                        <div className="flex items-center justify-between mb-8">
-
-                            <div>
-
-                                <h2 className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-
-                                    <LayoutGrid className="w-5 h-5 text-indigo-500" /> MEKAN SİMÜLASYONU
-
-                                </h2>
-
-                                <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">Ürünü Farklı Ortamlarda Test Edin</p>
+                                </button>
 
                             </div>
 
                         </div>
 
-                        <div className="grid grid-cols-5 gap-5">
+                    </div>
 
-                            {MOCKUP_SCENES.map((scene) => (
 
-                                <div
 
-                                    key={scene.id}
+                    <div className="bg-[var(--app-surface)] border-t border-[var(--app-border)] mt-8">
 
-                                    onClick={() => setSelectedScene(scene)}
-
-                                    className={`group relative h-32 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
-
-                                >
-
-                                    <img src={scene.url} alt={scene.title} className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
-
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-4">
-
-                                        <span className="text-[9px] font-black text-white uppercase tracking-tighter">{scene.title}</span>
-
-                                    </div>
-
-                                </div>
-
-                            ))}
-
-                        </div>
+                        <SettingsPanelContent />
 
                     </div>
 
@@ -986,31 +881,151 @@ const LightboxConfigurator: React.FC<Props> = () => {
 
 
 
-                <div className="w-[440px] bg-[var(--app-surface)] h-full border-l border-[var(--app-border)] flex flex-col shadow-2xl z-20 overflow-y-auto custom-scrollbar">
+                <div className="hidden md:flex h-screen w-screen bg-[var(--app-bg)] text-[var(--app-text)] font-sans overflow-hidden">
 
-                    <SettingsPanelContent />
+                    <div className="flex-1 relative p-8 flex flex-col overflow-y-auto custom-scrollbar">
+
+                        <PublicHeader
+
+                            price={breakdown?.finalPrice || 0}
+
+                            onOpenWheel={() => setIsWheelOpen(true)}
+
+                            onOpenMember={() => setIsMembershipOpen(true)}
+
+                            activePage="lightbox"
+
+                        />
+
+
+
+                        <div className="relative h-[550px] min-h-[450px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(79,70,229,0.08),transparent)] pointer-events-none" />
+
+                            <Lightbox3D config={config} isMockupMode={false} />
+
+                            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 p-2.5 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl z-20">
+
+                                <button onClick={() => updateConfig('viewMode', 'finish')} className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.viewMode === 'finish' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500 hover:text-white'}`}>
+
+                                    <Eye className="w-4 h-4" /> ATÖLYE GÖRÜNÜMÜ
+
+                                </button>
+
+                                <button onClick={() => updateConfig('viewMode', 'technical')} className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.viewMode === 'technical' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/30' : 'text-gray-500 hover:text-white'}`}>
+
+                                    <EyeOff className="w-4 h-4" /> TEKNİK ŞEMA
+
+                                </button>
+
+                                <button
+
+                                    onClick={() => updateConfig('isLightOn', !config.isLightOn)}
+
+                                    className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.isLightOn ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-white'}`}
+
+                                >
+
+                                    <Sparkles className={`w-4 h-4 ${config.isLightOn ? 'fill-yellow-400' : ''}`} /> {config.isLightOn ? 'IŞIK AÇIK' : 'IŞIK KAPALI'}
+
+                                </button>
+
+                                <button
+
+                                    onClick={() => updateConfig('hasFeet', !config.hasFeet)}
+
+                                    className={`flex items-center gap-3 px-8 py-3.5 rounded-full text-[10px] font-black transition-all ${config.hasFeet ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'text-gray-500 hover:text-white'}`}
+
+                                >
+
+                                    <Box className="w-4 h-4" /> {config.hasFeet ? 'AYAKLI MOD' : 'DUVAR MONTAJ'}
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div className="mt-14 mb-10 px-4">
+
+                            <div className="flex items-center justify-between mb-8">
+
+                                <div>
+
+                                    <h2 className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-tighter">
+
+                                        <LayoutGrid className="w-5 h-5 text-indigo-500" /> MEKAN SİMÜLASYONU
+
+                                    </h2>
+
+                                    <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">Ürünü Farklı Ortamlarda Test Edin</p>
+
+                                </div>
+
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-5">
+
+                                {MOCKUP_SCENES.map((scene) => (
+
+                                    <div
+
+                                        key={scene.id}
+
+                                        onClick={() => setSelectedScene(scene)}
+
+                                        className={`group relative h-32 rounded-3xl overflow-hidden cursor-pointer border-2 transition-all duration-300 ${selectedScene?.id === scene.id ? 'border-indigo-500 scale-105 shadow-2xl shadow-indigo-500/20' : 'border-white/5 hover:border-white/20'}`}
+
+                                    >
+
+                                        <img src={scene.url} alt={scene.title} className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-4">
+
+                                            <span className="text-[9px] font-black text-white uppercase tracking-tighter">{scene.title}</span>
+
+                                        </div>
+
+                                    </div>
+
+                                ))}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div className="w-[440px] bg-[var(--app-surface)] h-full border-l border-[var(--app-border)] flex flex-col shadow-2xl z-20 overflow-y-auto custom-scrollbar">
+
+                        <SettingsPanelContent />
+
+                    </div>
 
                 </div>
 
-            </div>
+
+
+                {selectedScene && <MockupViewer config={config} scene={selectedScene} onClose={() => setSelectedScene(null)} />}
 
 
 
-            {selectedScene && <MockupViewer config={config} scene={selectedScene} onClose={() => setSelectedScene(null)} />}
+                <OrderModal
 
+                    isOpen={isOrderModalOpen}
 
+                    onClose={() => setIsOrderModalOpen(false)}
 
-            <OrderModal
+                    onSubmit={handleOrderSubmit}
 
-                isOpen={isOrderModalOpen}
+                    finalPrice={breakdown?.finalPrice || 0}
 
-                onClose={() => setIsOrderModalOpen(false)}
-
-                onSubmit={handleOrderSubmit}
-
-                finalPrice={breakdown?.finalPrice || 0}
-
-            />
+                />
 
             </div>
 

@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using LightboxBackend.Data;
 using LightboxBackend.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -45,11 +47,34 @@ public class SettingsController : ControllerBase
         }
         else
         {
-            // Update fields manually or just set entry state
-            _context.Entry(existing).CurrentValues.SetValues(settings);
+            // Partial update - only update fields that are explicitly set (non-default)
+            var props = typeof(SystemSettings).GetProperties()
+                .Where(p => p.Name != "Id" && p.CanWrite);
+            
+            foreach (var prop in props)
+            {
+                var newVal = prop.GetValue(settings);
+                var defaultVal = prop.PropertyType.IsValueType 
+                    ? Activator.CreateInstance(prop.PropertyType) 
+                    : null;
+                
+                // For bool, we need special handling since false IS a valid value
+                if (prop.PropertyType == typeof(bool))
+                {
+                    // Always update booleans from the request
+                    prop.SetValue(existing, newVal);
+                }
+                else if (newVal != null && !newVal.Equals(defaultVal))
+                {
+                    prop.SetValue(existing, newVal);
+                }
+            }
         }
 
         await _context.SaveChangesAsync();
-        return Ok(settings);
+        
+        // Return the actual saved settings
+        var saved = await _context.Settings.FirstOrDefaultAsync(s => s.Id == 1);
+        return Ok(saved);
     }
 }

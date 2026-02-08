@@ -12,6 +12,7 @@ export interface CustomerData {
     fullName: string;
     phone: string;
     note: string;
+    discountedPrice?: number;
 }
 
 const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, finalPrice }) => {
@@ -85,7 +86,11 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                 ? `[İNDİRİM KODU: ${discountCode} (%${appliedDiscount.percentage})] ${formData.note}`
                 : formData.note;
 
-            await onSubmit({ ...formData, note: finalNote });
+            await onSubmit({
+                ...formData,
+                note: finalNote,
+                discountedPrice: appliedDiscount ? finalPriceAfterDiscount : undefined,
+            });
         } catch (error) {
             console.error("Submission error", error);
         } finally {
@@ -95,13 +100,13 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-[var(--app-surface-2)] border border-[var(--app-border)] rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter italic">Siparişi Tamamla</h2>
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Son Adım</p>
+                        <h2 className="text-2xl font-black text-[var(--app-text)] uppercase tracking-tighter italic">Siparişi Tamamla</h2>
+                        <p className="text-[var(--app-muted)] text-xs font-bold uppercase tracking-widest mt-1">Son Adım</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-white transition bg-white/5 p-2 rounded-xl hover:bg-white/10">
+                    <button onClick={onClose} className="text-[var(--app-muted)] hover:text-[var(--app-text)] transition bg-[var(--app-border)] p-2 rounded-xl hover:opacity-80">
                         <X size={20} />
                     </button>
                 </div>
@@ -113,12 +118,12 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                             <span className="text-xs text-gray-500 line-through font-bold">${finalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         )}
                     </div>
-                    <span className="text-3xl font-black text-white tracking-tighter">${finalPriceAfterDiscount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-3xl font-black text-[var(--app-text)] tracking-tighter">${finalPriceAfterDiscount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Ad Soyad</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Ad Soyad</label>
                         <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <input
@@ -126,14 +131,14 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                                 type="text"
                                 value={formData.fullName}
                                 onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                                className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full pl-11 pr-4 py-4 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-2xl text-[var(--app-text)] font-bold outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="Adınız Soyadınız"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Telefon</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Telefon</label>
                         <div className="relative">
                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <input
@@ -142,7 +147,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
                                 onBlur={() => { }} // Disabled auto-check in favor of manual button
-                                className="w-full pl-11 pr-28 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full pl-11 pr-28 py-4 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-2xl text-[var(--app-text)] font-bold outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="05XX XXX XX XX"
                                 maxLength={14}
                             />
@@ -176,14 +181,14 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                                 value={discountCode}
                                 onChange={e => setDiscountCode(e.target.value.toUpperCase())}
                                 placeholder="KODU GİRİNİZ"
-                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-mono font-bold outline-none focus:border-indigo-500 transition-colors uppercase"
+                                className="flex-1 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text)] font-mono font-bold outline-none focus:border-indigo-500 transition-colors uppercase"
                                 disabled={!!appliedDiscount}
                             />
                             <button
                                 type="button"
                                 onClick={handleApplyDiscount}
                                 disabled={!discountCode || isValidating || !!appliedDiscount}
-                                className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 rounded-xl transition disabled:opacity-50"
+                                className="bg-[var(--app-border)] hover:opacity-80 text-[var(--app-text)] font-bold px-4 rounded-xl transition disabled:opacity-50"
                             >
                                 {isValidating ? <Loader2 className="animate-spin w-4 h-4" /> : 'UYGULA'}
                             </button>
@@ -198,13 +203,13 @@ const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, onSubmit, fina
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Sipariş Notu (Opsiyonel)</label>
+                        <label className="text-[10px] font-black text-[var(--app-muted)] uppercase tracking-widest ml-1">Sipariş Notu (Opsiyonel)</label>
                         <div className="relative">
                             <MessageSquare className="absolute left-4 top-4 w-4 h-4 text-gray-500" />
                             <textarea
                                 value={formData.note}
                                 onChange={e => setFormData({ ...formData, note: e.target.value })}
-                                className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-indigo-500 transition-colors min-h-[100px] resize-none"
+                                className="w-full pl-11 pr-4 py-4 bg-[var(--app-bg)] border border-[var(--app-border)] rounded-2xl text-[var(--app-text)] font-bold outline-none focus:border-indigo-500 transition-colors min-h-[100px] resize-none"
                                 placeholder="Varsa özel istekleriniz..."
                             />
                         </div>

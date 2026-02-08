@@ -471,6 +471,9 @@ namespace LightboxBackend.Migrations
                     b.Property<decimal>("FabricProfitMarginPercentage")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsWheelEnabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("LaborRatePercentage")
                         .HasColumnType("TEXT");
 
@@ -511,6 +514,7 @@ namespace LightboxBackend.Migrations
                             CornerPiecePrice = 0.70m,
                             DefaultLedSpacingCm = 15.0m,
                             FabricProfitMarginPercentage = 30.0m,
+                            IsWheelEnabled = true,
                             LaborRatePercentage = 30.0m,
                             LedIndoorPricePerMeter = 2.00m,
                             LedOutdoorPricePerMeter = 3.00m,

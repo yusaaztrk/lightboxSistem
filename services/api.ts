@@ -166,6 +166,9 @@ export const api = {
   },
 
   // --- Spin Wheel ---
+  async getWheelStatus(): Promise<{ isEnabled: boolean }> {
+    return (await axios.get<{ isEnabled: boolean }>(`${API_URL}/spinwheel/status`)).data;
+  },
   async getWheelConfig() {
     return (await axios.get<SpinWheelItem[]>(`${API_URL}/spinwheel/config`)).data;
   },

@@ -15,6 +15,7 @@ import MockupViewer from '../components/MockupViewer';
 import PublicHeader from '../components/PublicHeader';
 
 import { api } from '../services/api';
+import { addCartItem } from '../services/cart';
 
 import OrderModal, { CustomerData } from '../components/OrderModal';
 
@@ -26,9 +27,19 @@ import { User } from 'lucide-react';
 
 
 
+const FABRIC_CONFIG_CACHE = 'fabric_config_cache';
+
+const loadFabricCache = (): ConfigOptions | null => {
+    try {
+        const raw = localStorage.getItem(FABRIC_CONFIG_CACHE);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch { return null; }
+};
+
 const FabricConfigurator: React.FC = () => {
 
-    const [config, setConfig] = useState<ConfigOptions>({ ...DEFAULT_CONFIG, depth: 0 }); // Depth 0 for fabric view? Or default?
+    const [config, setConfig] = useState<ConfigOptions>(() => loadFabricCache() || { ...DEFAULT_CONFIG, depth: 0 });
 
     const [factors, setFactors] = useState<PricingFactors>(INITIAL_PRICING);
 
@@ -186,7 +197,11 @@ const FabricConfigurator: React.FC = () => {
 
     const updateConfig = (key: keyof ConfigOptions, value: any) => {
 
-        setConfig(prev => ({ ...prev, [key]: value }));
+        setConfig(prev => {
+            const next = { ...prev, [key]: value };
+            try { localStorage.setItem(FABRIC_CONFIG_CACHE, JSON.stringify(next)); } catch { }
+            return next;
+        });
 
     };
 
@@ -204,7 +219,7 @@ const FabricConfigurator: React.FC = () => {
 
             dimensions: `${config.width}x${config.height}`,
 
-            price: finalPrice,
+            price: customerData.discountedPrice ?? finalPrice,
 
             configurationDetails: JSON.stringify({ ...config, type: 'FABRIC_ONLY', note: customerData.note }),
 
@@ -554,11 +569,26 @@ const FabricConfigurator: React.FC = () => {
 
                     </div>
 
-                    <button onClick={() => setIsOrderModalOpen(true)} className="w-full bg-emerald-600 text-white font-black py-5 rounded-2xl hover:bg-emerald-500 transition shadow-xl shadow-emerald-600/20 active:scale-[0.98] uppercase tracking-wider flex items-center justify-center gap-2">
-
-                        <ShoppingBag className="w-5 h-5" /> SİPARİŞ OLUŞTUR
-
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => {
+                                addCartItem({
+                                    type: 'fabric',
+                                    title: `Kumaş ${config.width}x${config.height} cm`,
+                                    price: finalPrice,
+                                    configurationDetails: JSON.stringify({ ...config, type: 'FABRIC_ONLY' }),
+                                    previewImageUrl: config.userImageUrl || undefined,
+                                });
+                                alert('Sepete eklendi!');
+                            }}
+                            className="w-full bg-white/5 border border-white/10 text-white font-black py-4 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center gap-2 shadow-xl uppercase tracking-widest text-xs active:scale-[0.98]"
+                        >
+                            <ShoppingBag className="w-4 h-4" /> SEPETE EKLE
+                        </button>
+                        <button onClick={() => setIsOrderModalOpen(true)} className="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl hover:bg-emerald-500 transition shadow-xl shadow-emerald-600/20 active:scale-[0.98] uppercase tracking-wider flex items-center justify-center gap-2 text-xs">
+                            <ShoppingBag className="w-4 h-4" /> SİPARİŞ OLUŞTUR
+                        </button>
+                    </div>
 
                 </div>
 

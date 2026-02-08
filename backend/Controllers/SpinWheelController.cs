@@ -25,6 +25,14 @@ public class SpinWheelController : ControllerBase
         return digits;
     }
 
+    // --- STATUS ---
+    [HttpGet("status")]
+    public async Task<IActionResult> GetWheelStatus()
+    {
+        var settings = await _context.Settings.FirstOrDefaultAsync();
+        return Ok(new { isEnabled = settings?.IsWheelEnabled ?? true });
+    }
+
     // --- CONFIGURATION ---
 
     [HttpGet("config")]
@@ -81,6 +89,11 @@ public class SpinWheelController : ControllerBase
     [HttpPost("spin")]
     public async Task<IActionResult> Spin([FromBody] SpinRequest request)
     {
+        // Check if wheel is enabled
+        var settings = await _context.Settings.FirstOrDefaultAsync();
+        if (settings != null && !settings.IsWheelEnabled)
+            return BadRequest("Şans çarkı şu anda devre dışıdır.");
+
         var phone = NormalizePhone(request.PhoneNumber);
         if (string.IsNullOrEmpty(phone))
             return BadRequest("Telefon numarası gereklidir.");

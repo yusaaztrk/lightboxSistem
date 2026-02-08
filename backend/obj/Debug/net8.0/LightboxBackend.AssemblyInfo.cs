@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LightboxBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4ace2443889d196fd48f1123122b4600c16533e6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e84e4da0cab53bb7f9c54424882302c87e6dc9ce")]
 [assembly: System.Reflection.AssemblyProductAttribute("LightboxBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LightboxBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

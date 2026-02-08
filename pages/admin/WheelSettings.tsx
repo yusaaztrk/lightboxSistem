@@ -8,6 +8,8 @@ const WheelSettings: React.FC = () => {
     const [leads, setLeads] = useState<CustomerLead[]>([]);
     const [newWheelItem, setNewWheelItem] = useState<Partial<SpinWheelItem>>({ label: '', discountPercentage: 10, probability: 10, colorHex: '#ff0000', isLoss: false });
     const [loading, setLoading] = useState(true);
+    const [wheelEnabled, setWheelEnabled] = useState(true);
+    const [togglingWheel, setTogglingWheel] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -16,16 +18,31 @@ const WheelSettings: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [w, l] = await Promise.all([
+            const [w, l, status] = await Promise.all([
                 api.getWheelConfig(),
-                api.getLeads()
+                api.getLeads(),
+                api.getWheelStatus()
             ]);
             setWheelItems(w || []);
             setLeads(l || []);
+            setWheelEnabled(status.isEnabled);
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleWheelEnabled = async () => {
+        setTogglingWheel(true);
+        try {
+            const newVal = !wheelEnabled;
+            await api.updateSystemSettings({ isWheelEnabled: newVal } as any);
+            setWheelEnabled(newVal);
+        } catch (e) {
+            alert('Ayar değiştirilemedi.');
+        } finally {
+            setTogglingWheel(false);
         }
     };
 
@@ -59,7 +76,17 @@ const WheelSettings: React.FC = () => {
     return (
         <div className="space-y-12">
             <div>
-                <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic mb-8">Çark Ayarları</h1>
+                <div className="flex items-center justify-between mb-8">
+                    <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Çark Ayarları</h1>
+                    <button
+                        onClick={toggleWheelEnabled}
+                        disabled={togglingWheel}
+                        className={`px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition flex items-center gap-2 ${wheelEnabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'} disabled:opacity-50`}
+                    >
+                        <div className={`w-3 h-3 rounded-full ${wheelEnabled ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        {togglingWheel ? '...' : wheelEnabled ? 'ÇARK AÇIK' : 'ÇARK KAPALI'}
+                    </button>
+                </div>
 
                 {/* Wheel Config */}
                 <div className="space-y-6">

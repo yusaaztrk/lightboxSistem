@@ -41,6 +41,9 @@ public class SystemSettings
     // Ekran görüntüsü: Dış mekan adet (50cm) 1.5$ → Metresi 3$
     public decimal LedOutdoorPricePerMeter { get; set; } = 3.00m;
 
+    // --- ÇARK (Spin Wheel) ---
+    public bool IsWheelEnabled { get; set; } = true;
+
     // --- DEPRECATED FIELDS (Geriye Dönük Uyumluluk İçin) ---
     // Not: Profil, Zemin ve Adaptör fiyatları artık ayrı tablolarda tutulacak
     [Obsolete("Use ProfileCost table instead")]
